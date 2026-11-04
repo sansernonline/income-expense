@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="th" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Income &amp; Expense · สร้างรายรับรายจ่ายจำลอง</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600&family=Sarabun:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23E11D48'/%3E%3Ctext x='16' y='23' font-size='20' text-anchor='middle' fill='white' font-family='sans-serif'%3E%E0%B8%BF%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM4 10h16M12 10v9"/></svg><b>Income &amp; Expense</b><span class="sub">สร้างรายรับรายจ่ายจำลอง</span></div>
+  <div class="top-actions">
+    <button class="btn ghost" id="btn-clear" type="button">ล้างทั้งหมด</button>
+    <button class="btn ghost" id="btn-theme" type="button" aria-label="สลับโหมดสว่าง/มืด">โหมดมืด</button>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="สลับหน้า">
+  <button type="button" data-tab="settings" aria-pressed="true">ตั้งค่า</button>
+  <button type="button" data-tab="ledger" aria-pressed="false">ตาราง <span id="tab-count"></span></button>
+</nav>
+
+<main class="app" data-view="settings">
+  <!-- ตาราง -->
+  <section class="panel ledger" aria-label="ตารางรายรับรายจ่าย">
+    <div class="bar">
+      <button class="btn" id="btn-regen" type="button">สุ่มใหม่</button>
+      <button class="btn" id="btn-undo" type="button">ย้อนกลับ</button>
+      <button class="btn" id="btn-add" type="button">เพิ่มรายการ</button>
+      <span class="grow"></span>
+      <button class="btn" id="btn-export" type="button">ส่งออก Excel</button>
+    </div>
+
+    <div class="tablewrap">
+      <table id="tbl">
+        <thead><tr><th>วันที่<small>วัน-เดือน-ปี</small></th><th>รายการ<small>ชื่อ แก้ได้</small></th><th class="r">รายรับ<small>เงินเข้า (บาท)</small></th><th class="r">รายจ่าย<small>เงินออก (บาท)</small></th><th class="r">คงเหลือ<small>เงินสะสม (บาท)</small></th><th class="x"><span class="sr">ลบ</span></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="empty" id="empty">
+        <b>ยังไม่มีรายการ</b>
+        <p>เลือกประเภทธุรกิจในแผงตั้งค่าด้านขวา แล้วกด “สร้างรายการ” หรือกด “เพิ่มรายการ” เพื่อกรอกเอง</p>
+      </div>
+    </div>
+
+    <footer class="sum" id="sum">
+      <div><span>รายรับรวม</span><b id="s-in">0.00</b></div>
+      <div><span>รายจ่ายรวม</span><b id="s-out">0.00</b></div>
+      <div><span>คงเหลือสุดท้าย</span><b id="s-bal" class="accent">0.00</b></div>
+      <div><span>จำนวนรายการ</span><b id="s-n">0</b></div>
+    </footer>
+  </section>
+
+  <!-- ตั้งค่า -->
+  <aside class="panel side" aria-label="ตั้งค่า">
+    <div class="side-body">
+      <section class="sec">
+        <h2>ประเภทธุรกิจ</h2>
+        <div class="chips" id="types" role="group" aria-label="ประเภทธุรกิจ"></div>
+        <label class="field" id="other-box" hidden>พิมพ์ประเภทธุรกิจของคุณ<input id="biz" type="text" maxlength="200" placeholder="เช่น ร้านขายต้นไม้ มีพนักงาน 2 คน เปิดเช้าถึงเย็น"></label>
+        <div class="addrow"><button class="btn small" id="btn-ai" type="button" title="ให้ Typhoon AI คิดหมวดรายรับรายจ่ายให้ใหม่ตามประเภทนี้">ให้ AI ปรับหมวด</button><span class="lbl sm" id="ai-note"></span></div>
+      </section>
+
+      <section class="sec">
+        <h2>ช่วงเวลา</h2>
+        <div class="grid">
+          <label class="field">วันที่เริ่ม<input id="start" type="date"></label>
+          <label class="field">วันที่สิ้นสุด<input id="end" type="date"></label>
+          <label class="field span2">ยอดยกมา (บาท)<input id="opening" type="number" min="0" step="0.01" inputmode="decimal"></label>
+        </div>
+      </section>
+
+      <section class="sec">
+        <h2>รายรับ</h2>
+        <div class="chips" id="mode">
+          <button type="button" class="chip" data-mode="month">ตั้งเป็นต่อเดือน</button>
+          <button type="button" class="chip" data-mode="day">ตั้งเป็นต่อวัน</button>
+        </div>
+        <div class="field" id="box-month"><span class="lbl">รายรับต่อเดือน (บาท) · แต่ละเดือนสุ่มในช่วงนี้ แล้วแบ่งลงแต่ละวันให้</span>
+          <div class="range"><label>ตั้งแต่<input id="mmin" type="number" min="0" step="1000" inputmode="numeric"></label><label>ถึง<input id="mmax" type="number" min="0" step="1000" inputmode="numeric"></label></div>
+          <details class="sub"><summary>กำหนดยอดบางเดือนเอง</summary>
+            <span class="lbl sm">เว้นว่าง = สุ่มในช่วงด้านบน</span>
+            <div class="months" id="months"></div>
+          </details>
+        </div>
+        <div class="field" id="box-day" hidden><span class="lbl">รายรับต่อวันที่ร้านเปิด (บาท) · แต่ละวันสุ่มในช่วงนี้ ยอดเดือนคือผลรวมของวัน</span>
+          <div class="range"><label>ตั้งแต่<input id="dmin" type="number" min="0" step="100" inputmode="numeric"></label><label>ถึง<input id="dmax" type="number" min="0" step="100" inputmode="numeric"></label></div>
+          <span class="lbl sm" id="day-est"></span>
+        </div>
+        <div class="plan" id="rev-list" aria-label="หมวดรายรับ"></div>
+        <button class="btn small" id="btn-rev-add" type="button">เพิ่มหมวดรายรับ</button>
+      </section>
+
+      <section class="sec">
+        <h2>รายจ่าย</h2>
+        <div class="plan" id="exp-list" aria-label="หมวดรายจ่าย"></div>
+        <button class="btn small" id="btn-exp-add" type="button">เพิ่มหมวดรายจ่าย</button>
+        <p class="sumline" id="exp-sum"></p>
+        <label class="field">กำไรเป้าหมาย (% ของรายรับ) · เว้นว่าง = ใช้สัดส่วนตามหมวดด้านบน<input id="margin" type="number" min="0" max="95" step="1" inputmode="decimal" placeholder="เช่น 25"></label>
+      </section>
+
+      <section class="sec">
+        <h2>วันหยุดร้าน</h2>
+        <div class="field"><span class="lbl">วันหยุดประจำสัปดาห์</span><div class="chips" id="wdays"></div></div>
+        <details class="sub"><summary>วันหยุดพิเศษ <span id="closed-count"></span></summary>
+          <div class="chips" id="closed-dates"></div>
+          <div class="addrow"><input id="closed-new" type="date" aria-label="เพิ่มวันหยุดพิเศษ"><button class="btn" id="btn-closed-add" type="button">เพิ่มวันหยุด</button></div>
+        </details>
+      </section>
+
+      <details class="sec adv">
+        <summary>จังหวะการขายและความละเอียด</summary>
+        <div class="grid">
+          <label class="field span2">เสาร์–อาทิตย์ขายดีกว่าวันธรรมดา (%) · ศุกร์ได้ครึ่งหนึ่ง · ใช้เมื่อตั้งรายรับต่อเดือน<input id="weekendPct" type="number" min="0" max="100" step="5" inputmode="numeric"></label>
+          <div class="field span2"><span class="lbl">เดือนขายดี / ซบเซา · กดเดือนเพื่อสลับ ปกติ → ขายดี ▲ → ซบเซา ▼</span><div class="chips" id="season"></div></div>
+          <label class="field span2">เดือนขายดี/ซบเซา ต่างจากปกติกี่ % (รวมกับช่วงรายรับที่ตั้งไว้)<input id="seasonPct" type="number" min="0" max="60" step="5" inputmode="numeric"></label>
+          <div class="field span2"><span class="lbl">จำนวนรายการรายรับต่อวัน</span>
+            <div class="range"><label>อย่างน้อย<input id="txMin" type="number" min="1" max="6" step="1" inputmode="numeric"></label><label>มากสุด<input id="txMax" type="number" min="1" max="6" step="1" inputmode="numeric"></label></div></div>
+          <label class="field">ยอดแต่ละวันแกว่ง ± (%)<input id="jitterPct" type="number" min="0" max="60" step="5" inputmode="numeric"></label>
+          <label class="field">ล็อกผลสุ่ม (ใส่คำหรือเลข)<input id="seed" type="text" maxlength="20" placeholder="เว้นว่าง = สุ่มทุกครั้ง"></label>
+        </div>
+      </details>
+    </div>
+
+    <div class="side-foot">
+      <p class="err" id="settings-err" role="alert" hidden></p>
+      <button class="btn primary" id="btn-gen" type="button">สร้างรายการ</button>
+    </div>
+  </aside>
+</main>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="plan.js"></script>
+<script src="presets.js"></script>
+<script src="ledger.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
