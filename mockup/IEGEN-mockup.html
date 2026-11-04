@@ -1,0 +1,1092 @@
+<!doctype html>
+<html lang="th" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Income &amp; Expense · ต้นแบบที่กดได้</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600&family=Sarabun:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23E11D48'/%3E%3Ctext x='16' y='23' font-size='20' text-anchor='middle' fill='white' font-family='sans-serif'%3E%E0%B8%BF%3C/text%3E%3C/svg%3E">
+<style>
+/* โทเค็นลอกจาก BILLGEN-mockup.html (สีเดียวที่ไม่เป็นกลาง = accent ชมพูแดง · กรอบแอปเป็นสีกลาง) */
+:root{
+  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;
+  --r-ctl:10px;--r-panel:16px;--r-pill:999px;
+  --fs-lg:23px;--fs-md:15px;--fs-base:13.5px;--fs-sm:12.5px;--fs-xs:11.5px;
+  --font:"Sarabun","Noto Sans Thai",Loma,system-ui,sans-serif;
+  --font-h:"Bai Jamjuree","Sarabun","Noto Sans Thai",Loma,system-ui,sans-serif;
+  --desk:#EDEDF2;--surface:#FFFFFF;--surface-2:#F6F6FA;--line:#E7E7EE;--line-2:#C6C6D2;
+  --text:#121216;--text-2:#55555F;--text-3:#6B6B77;
+  --accent:#CC1152;--accent-fill:#E11D48;--on-accent:#FFFFFF;--flash:#FFE4EC;
+  --accent-grad:linear-gradient(135deg,#E11D48,#A855F7);--accent-glow:rgba(225,29,72,.35);
+  --panel-sh:0 1px 2px rgba(16,16,24,.04),0 14px 34px -18px rgba(16,16,24,.16);
+  --ok:#15803D;--err:#C81E1E;--err-bg:#FDECEA;--warn:#B45309;
+  --bg-grad:radial-gradient(900px 620px at 72% -12%,rgba(255,255,255,.95),transparent 62%),linear-gradient(180deg,#F3F3F8 0%,#EAEAF1 100%);
+}
+html[data-theme=dark]{
+  --desk:#0E0E12;--surface:#17171C;--surface-2:#202027;--line:#2A2A33;--line-2:#4C4C59;
+  --text:#F2F2F5;--text-2:#B4B4C0;--text-3:#9A9AA7;
+  --accent:#FB7185;--flash:#2C2C36;
+  --panel-sh:0 1px 2px rgba(0,0,0,.5),0 22px 50px -26px rgba(0,0,0,.8);
+  --accent-glow:rgba(225,29,72,.4);--ok:#6EE7A8;--err:#FF8FA0;--err-bg:#3C1C24;--warn:#FFC857;
+  --bg-grad:radial-gradient(900px 620px at 72% -12%,rgba(255,255,255,.05),transparent 62%),linear-gradient(180deg,#15151A 0%,#0C0C10 100%);
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{font:400 var(--fs-base)/1.6 var(--font);background:var(--bg-grad);background-color:var(--desk);color:var(--text);display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+button[disabled]{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.grow{flex:1}
+[hidden]{display:none!important}
+
+/* หัวแอป */
+.top{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);padding:var(--s3) var(--s5);flex:none}
+.brand{display:flex;align-items:center;gap:var(--s2);font-family:var(--font-h)}
+.brand b{font-size:var(--fs-md);font-weight:500;letter-spacing:.14em;text-transform:uppercase}
+.brand svg{width:24px;height:24px;fill:none;stroke:var(--accent);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.brand .sub{color:var(--text-2);font-size:var(--fs-sm);font-family:var(--font)}
+.top-actions{display:flex;gap:var(--s2)}
+
+/* ปุ่ม */
+.btn{height:36px;padding:0 var(--s4);border:1px solid var(--line-2);border-radius:var(--r-pill);font-weight:600;font-size:var(--fs-sm);background:var(--surface);white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--accent-grad);background-color:var(--accent-fill);border-color:transparent;color:var(--on-accent);box-shadow:0 10px 26px -10px var(--accent-glow)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--text-2)}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.danger{color:var(--err);border-color:var(--err)}
+
+/* โครง: ตารางซ้าย · ตั้งค่าขวา */
+.app{flex:1;min-height:0;display:grid;grid-template-columns:1fr minmax(380px,430px);gap:var(--s3);padding:0 var(--s5) var(--s5)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-panel);box-shadow:var(--panel-sh);min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.tabs{display:none}
+
+/* ตั้งค่า (แผงขวา) */
+.side-body{flex:1;overflow:auto;padding:var(--s4);display:flex;flex-direction:column;gap:var(--s5)}
+.sec{display:flex;flex-direction:column;gap:var(--s3)}
+.sec h2{font:600 var(--fs-md)/1.4 var(--font-h);letter-spacing:.02em}
+.side-foot{padding:var(--s3) var(--s4) var(--s4);border-top:1px solid var(--line);display:flex;flex-direction:column;gap:var(--s2)}
+.side-foot .btn{height:44px;font-size:var(--fs-base)}
+.hint{color:var(--text-2);font-weight:400;font-size:var(--fs-sm)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3)}
+.field{display:flex;flex-direction:column;gap:var(--s1);font-size:var(--fs-sm);color:var(--text-2);min-width:0}
+.field .lbl{color:var(--text-2)}
+.span2{grid-column:span 2}
+input[type=text],input[type=date],input[type=number],select{height:36px;padding:0 var(--s3);border:1px solid var(--line-2);border-radius:var(--r-ctl);background:var(--surface);color:var(--text);min-width:0;width:100%}
+.range{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3)}
+.range label{display:flex;flex-direction:column;gap:2px;font-size:var(--fs-xs)}
+.lbl.sm{font-size:var(--fs-xs);color:var(--text-3)}
+.months{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:var(--s2)}
+.months label{display:flex;flex-direction:column;gap:2px;font-size:var(--fs-xs)}
+.chips{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.chip{height:32px;padding:0 var(--s3);border:1px solid var(--line-2);border-radius:var(--r-pill);font-size:var(--fs-sm);background:var(--surface);color:var(--text)}
+.chip[aria-pressed=true]{background:var(--flash);border-color:var(--accent);color:var(--accent);font-weight:600}
+.chip.date{display:inline-flex;align-items:center;gap:var(--s2)}
+.chip[data-season=peak]{background:var(--flash);border-color:var(--accent);color:var(--accent);font-weight:600}
+.chip[data-season=slow]{background:var(--surface-2);border-color:var(--text-3);color:var(--text);font-weight:600}
+.addrow{display:flex;gap:var(--s2);align-items:center;flex-wrap:wrap}
+.addrow input{max-width:180px}
+.btn.small{height:30px;font-size:var(--fs-xs);align-self:flex-start}
+.err{padding:var(--s2) var(--s3);background:var(--err-bg);color:var(--err);border-radius:var(--r-ctl);font-size:var(--fs-sm)}
+.sumline{font-size:var(--fs-sm);color:var(--text-2)}
+.sumline b{color:var(--text)}
+.plan{display:flex;flex-direction:column;gap:var(--s2)}
+.plan:empty::before{content:"เลือกประเภทธุรกิจด้านบน ระบบจะเติมหมวดให้";color:var(--text-3);font-size:var(--fs-sm)}
+.prow{display:grid;grid-template-columns:minmax(0,1fr) 68px 28px;gap:var(--s2);align-items:center}
+.prow.exp{grid-template-columns:minmax(0,1fr) 56px 104px 56px 28px}
+.prow input,.prow select{height:32px;padding:0 var(--s2)}
+.prow .rm{width:28px;height:28px;border-radius:8px;color:var(--text-3);font-size:18px;line-height:1}
+.prow .rm:hover{background:var(--err-bg);color:var(--err)}
+.adv>summary{cursor:pointer;font:600 var(--fs-md)/1.4 var(--font-h);list-style:none;display:flex;gap:var(--s2);align-items:baseline}
+.adv>summary::-webkit-details-marker{display:none}
+.adv>summary::before{content:"▸";color:var(--text-3);font-size:var(--fs-xs)}
+.adv[open]>summary::before{content:"▾"}
+.adv .grid{margin-top:var(--s3)}
+.sub>summary{cursor:pointer;font-size:var(--fs-sm);color:var(--text-2);list-style:none;display:flex;gap:var(--s2);align-items:baseline}
+.sub>summary::-webkit-details-marker{display:none}
+.sub>summary::before{content:"▸";color:var(--text-3);font-size:var(--fs-xs)}
+.sub[open]>summary::before{content:"▾"}
+.sub>:not(summary){margin-top:var(--s2)}
+details.sub:not(.adv){display:block}
+.prow.head{font-size:var(--fs-xs);font-weight:600;color:var(--text);align-items:end;line-height:1.25}
+
+/* แถบปุ่ม + ตาราง */
+.bar{display:flex;gap:var(--s2);align-items:center;padding:var(--s3) var(--s4);flex:none;flex-wrap:wrap}
+.tablewrap{flex:1;overflow:auto;min-height:120px;position:relative}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:0 var(--s2);height:36px;border-bottom:1px solid var(--line);text-align:left}
+thead th{position:sticky;top:0;background:var(--surface-2);font-size:var(--fs-sm);color:var(--text);font-weight:600;z-index:1;padding:var(--s2) var(--s3);height:52px;line-height:1.25;vertical-align:middle}
+thead th small,.prow.head small{display:block;font-size:var(--fs-xs);font-weight:400;color:var(--text-3)}
+td{padding:0 var(--s1)}
+.r{text-align:right}
+td input[type]{height:32px;border-color:transparent;background:transparent;padding:0 var(--s2)}
+td input[type]:hover{border-color:var(--line)}
+td input[type]:focus{border-color:var(--accent);background:var(--surface)}
+td input[type].num{text-align:right}
+td.bal{text-align:right;padding:0 var(--s3);font-weight:600}
+td.bal.neg{color:var(--err)}
+td.x{width:36px;text-align:center}
+.del{width:32px;height:32px;border-radius:8px;color:var(--text-3);font-size:18px;line-height:1}
+.del:hover{background:var(--err-bg);color:var(--err)}
+col.d{width:150px}
+td:nth-child(1){width:140px}td:nth-child(3),td:nth-child(4){width:112px}td:nth-child(5){width:120px}td:nth-child(2){min-width:200px}
+.empty{padding:var(--s6) var(--s5);text-align:center;color:var(--text-2)}
+.empty b{display:block;color:var(--text);margin-bottom:var(--s1);font-size:var(--fs-md)}
+.sum{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s3);padding:var(--s3) var(--s4);border-top:1px solid var(--line);background:var(--surface-2);flex:none}
+.sum span{display:block;font-size:var(--fs-xs);color:var(--text-2)}
+.sum b{font:600 var(--fs-md)/1.4 var(--font-h);font-variant-numeric:tabular-nums}
+.sum b.accent{color:var(--accent);font-size:var(--fs-lg)}
+
+.toast{position:fixed;left:50%;bottom:var(--s5);transform:translateX(-50%);background:var(--text);color:var(--surface);padding:var(--s2) var(--s4);border-radius:var(--r-pill);font-size:var(--fs-sm);box-shadow:0 14px 36px -10px rgba(16,16,24,.3);z-index:5}
+
+/* จอแคบ: สลับแท็บตั้งค่า/ตาราง (NFR-USE-010) */
+@media (max-width:860px){
+  body{overflow:auto}
+  .top{padding:var(--s3) var(--s4)}
+  .brand .sub{display:none}
+  .tabs{display:flex;gap:var(--s2);padding:0 var(--s4) var(--s3)}
+  .tabs button{flex:1;height:40px;border:1px solid var(--line-2);border-radius:var(--r-pill);font-weight:600;background:var(--surface)}
+  .tabs button[aria-pressed=true]{background:var(--accent-grad);background-color:var(--accent-fill);border-color:transparent;color:var(--on-accent)}
+  .app{grid-template-columns:1fr;padding:0 var(--s4) var(--s4);min-height:70dvh}
+  .app[data-view=settings] .ledger,.app[data-view=ledger] .side{display:none}
+  .side-body{overflow:visible}
+  .tablewrap{min-height:300px}
+  table{min-width:700px}
+  td:nth-child(2){min-width:190px}
+  .sum{grid-template-columns:1fr 1fr}
+  .btn,.chip{min-height:44px}
+  .prow input,.prow select,.prow .rm{min-height:44px}
+}
+@media (prefers-reduced-motion:no-preference){.btn,.chip,.del{transition:background .12s ease-out,border-color .12s ease-out}}
+
+.mockbar{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 16px;background:#131318;color:#F2F2F5;font-size:12px;z-index:9}
+.mockbar b{letter-spacing:.08em;color:#FB7185}.mockbar button{height:28px;padding:0 12px;border-radius:999px;border:1px solid #55555F;color:#F2F2F5}
+.mockbar button:hover{background:#26262E}.mockbar span{color:#A9A9B6;margin-left:auto}
+body{padding-bottom:48px}@media print{.mockbar{display:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM4 10h16M12 10v9"/></svg><b>Income &amp; Expense</b><span class="sub">สร้างรายรับรายจ่ายจำลอง</span></div>
+  <div class="top-actions">
+    <button class="btn ghost" id="btn-clear" type="button">ล้างทั้งหมด</button>
+    <button class="btn ghost" id="btn-theme" type="button" aria-label="สลับโหมดสว่าง/มืด">โหมดมืด</button>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="สลับหน้า">
+  <button type="button" data-tab="settings" aria-pressed="true">ตั้งค่า</button>
+  <button type="button" data-tab="ledger" aria-pressed="false">ตาราง <span id="tab-count"></span></button>
+</nav>
+
+<main class="app" data-view="settings">
+  <!-- ตาราง -->
+  <section class="panel ledger" aria-label="ตารางรายรับรายจ่าย">
+    <div class="bar">
+      <button class="btn" id="btn-regen" type="button">สุ่มใหม่</button>
+      <button class="btn" id="btn-undo" type="button">ย้อนกลับ</button>
+      <button class="btn" id="btn-add" type="button">เพิ่มรายการ</button>
+      <span class="grow"></span>
+      <button class="btn" id="btn-export" type="button">ส่งออก Excel</button>
+    </div>
+
+    <div class="tablewrap">
+      <table id="tbl">
+        <thead><tr><th>วันที่<small>วัน-เดือน-ปี</small></th><th>รายการ<small>ชื่อ แก้ได้</small></th><th class="r">รายรับ<small>เงินเข้า (บาท)</small></th><th class="r">รายจ่าย<small>เงินออก (บาท)</small></th><th class="r">คงเหลือ<small>เงินสะสม (บาท)</small></th><th class="x"><span class="sr">ลบ</span></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="empty" id="empty">
+        <b>ยังไม่มีรายการ</b>
+        <p>เลือกประเภทธุรกิจในแผงตั้งค่าด้านขวา แล้วกด “สร้างรายการ” หรือกด “เพิ่มรายการ” เพื่อกรอกเอง</p>
+      </div>
+    </div>
+
+    <footer class="sum" id="sum">
+      <div><span>รายรับรวม</span><b id="s-in">0.00</b></div>
+      <div><span>รายจ่ายรวม</span><b id="s-out">0.00</b></div>
+      <div><span>คงเหลือสุดท้าย</span><b id="s-bal" class="accent">0.00</b></div>
+      <div><span>จำนวนรายการ</span><b id="s-n">0</b></div>
+    </footer>
+  </section>
+
+  <!-- ตั้งค่า -->
+  <aside class="panel side" aria-label="ตั้งค่า">
+    <div class="side-body">
+      <section class="sec">
+        <h2>ประเภทธุรกิจ</h2>
+        <div class="chips" id="types" role="group" aria-label="ประเภทธุรกิจ"></div>
+        <label class="field" id="other-box" hidden>พิมพ์ประเภทธุรกิจของคุณ<input id="biz" type="text" maxlength="200" placeholder="เช่น ร้านขายต้นไม้ มีพนักงาน 2 คน เปิดเช้าถึงเย็น"></label>
+        <div class="addrow"><button class="btn small" id="btn-ai" type="button" title="ให้ Typhoon AI คิดหมวดรายรับรายจ่ายให้ใหม่ตามประเภทนี้">ให้ AI ปรับหมวด</button><span class="lbl sm" id="ai-note"></span></div>
+      </section>
+
+      <section class="sec">
+        <h2>ช่วงเวลา</h2>
+        <div class="grid">
+          <label class="field">วันที่เริ่ม<input id="start" type="date"></label>
+          <label class="field">วันที่สิ้นสุด<input id="end" type="date"></label>
+          <label class="field span2">ยอดยกมา (บาท)<input id="opening" type="number" min="0" step="0.01" inputmode="decimal"></label>
+        </div>
+      </section>
+
+      <section class="sec">
+        <h2>รายรับ</h2>
+        <div class="chips" id="mode">
+          <button type="button" class="chip" data-mode="month">ตั้งเป็นต่อเดือน</button>
+          <button type="button" class="chip" data-mode="day">ตั้งเป็นต่อวัน</button>
+        </div>
+        <div class="field" id="box-month"><span class="lbl">รายรับต่อเดือน (บาท) · แต่ละเดือนสุ่มในช่วงนี้ แล้วแบ่งลงแต่ละวันให้</span>
+          <div class="range"><label>ตั้งแต่<input id="mmin" type="number" min="0" step="1000" inputmode="numeric"></label><label>ถึง<input id="mmax" type="number" min="0" step="1000" inputmode="numeric"></label></div>
+          <details class="sub"><summary>กำหนดยอดบางเดือนเอง</summary>
+            <span class="lbl sm">เว้นว่าง = สุ่มในช่วงด้านบน</span>
+            <div class="months" id="months"></div>
+          </details>
+        </div>
+        <div class="field" id="box-day" hidden><span class="lbl">รายรับต่อวันที่ร้านเปิด (บาท) · แต่ละวันสุ่มในช่วงนี้ ยอดเดือนคือผลรวมของวัน</span>
+          <div class="range"><label>ตั้งแต่<input id="dmin" type="number" min="0" step="100" inputmode="numeric"></label><label>ถึง<input id="dmax" type="number" min="0" step="100" inputmode="numeric"></label></div>
+          <span class="lbl sm" id="day-est"></span>
+        </div>
+        <div class="plan" id="rev-list" aria-label="หมวดรายรับ"></div>
+        <button class="btn small" id="btn-rev-add" type="button">เพิ่มหมวดรายรับ</button>
+      </section>
+
+      <section class="sec">
+        <h2>รายจ่าย</h2>
+        <div class="plan" id="exp-list" aria-label="หมวดรายจ่าย"></div>
+        <button class="btn small" id="btn-exp-add" type="button">เพิ่มหมวดรายจ่าย</button>
+        <p class="sumline" id="exp-sum"></p>
+        <label class="field">กำไรเป้าหมาย (% ของรายรับ) · เว้นว่าง = ใช้สัดส่วนตามหมวดด้านบน<input id="margin" type="number" min="0" max="95" step="1" inputmode="decimal" placeholder="เช่น 25"></label>
+      </section>
+
+      <section class="sec">
+        <h2>วันหยุดร้าน</h2>
+        <div class="field"><span class="lbl">วันหยุดประจำสัปดาห์</span><div class="chips" id="wdays"></div></div>
+        <details class="sub"><summary>วันหยุดพิเศษ <span id="closed-count"></span></summary>
+          <div class="chips" id="closed-dates"></div>
+          <div class="addrow"><input id="closed-new" type="date" aria-label="เพิ่มวันหยุดพิเศษ"><button class="btn" id="btn-closed-add" type="button">เพิ่มวันหยุด</button></div>
+        </details>
+      </section>
+
+      <details class="sec adv">
+        <summary>จังหวะการขายและความละเอียด</summary>
+        <div class="grid">
+          <label class="field span2">เสาร์–อาทิตย์ขายดีกว่าวันธรรมดา (%) · ศุกร์ได้ครึ่งหนึ่ง · ใช้เมื่อตั้งรายรับต่อเดือน<input id="weekendPct" type="number" min="0" max="100" step="5" inputmode="numeric"></label>
+          <div class="field span2"><span class="lbl">เดือนขายดี / ซบเซา · กดเดือนเพื่อสลับ ปกติ → ขายดี ▲ → ซบเซา ▼</span><div class="chips" id="season"></div></div>
+          <label class="field span2">เดือนขายดี/ซบเซา ต่างจากปกติกี่ % (รวมกับช่วงรายรับที่ตั้งไว้)<input id="seasonPct" type="number" min="0" max="60" step="5" inputmode="numeric"></label>
+          <div class="field span2"><span class="lbl">จำนวนรายการรายรับต่อวัน</span>
+            <div class="range"><label>อย่างน้อย<input id="txMin" type="number" min="1" max="6" step="1" inputmode="numeric"></label><label>มากสุด<input id="txMax" type="number" min="1" max="6" step="1" inputmode="numeric"></label></div></div>
+          <label class="field">ยอดแต่ละวันแกว่ง ± (%)<input id="jitterPct" type="number" min="0" max="60" step="5" inputmode="numeric"></label>
+          <label class="field">ล็อกผลสุ่ม (ใส่คำหรือเลข)<input id="seed" type="text" maxlength="20" placeholder="เว้นว่าง = สุ่มทุกครั้ง"></label>
+        </div>
+      </details>
+    </div>
+
+    <div class="side-foot">
+      <p class="err" id="settings-err" role="alert" hidden></p>
+      <button class="btn primary" id="btn-gen" type="button">สร้างรายการ</button>
+    </div>
+  </aside>
+</main>
+
+
+<div class="mockbar" role="toolbar" aria-label="ตัวควบคุมของ mockup">
+  <b>MOCKUP</b>
+  <button type="button" id="mb-empty">1 · เริ่มใหม่ (ว่าง)</button>
+  <button type="button" id="mb-gen">2 · เลือกร้านกาแฟ + สร้างรายการ</button>
+  <button type="button" id="mb-ai">3 · ให้ AI ปรับ (AI ตอบ)</button>
+  <button type="button" id="mb-down">4 · ให้ AI ปรับ (AI ใช้ไม่ได้)</button>
+  <span>ย่อหน้าต่าง ≤ 860 px เพื่อดูแบบมือถือ</span>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+/* แผนรายรับรายจ่าย: แม่แบบกลาง + ตัวทำความสะอาดแผนที่ AI ส่งมา (BR-060, NFR-SEC-020)
+   ใช้ได้ทั้งเบราว์เซอร์ (window.IE) และ Node (require) */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.IE = Object.assign(root.IE || {}, api);
+})(typeof self !== 'undefined' ? self : this, function () {
+  const LIMITS = { revenue: 5, daily: 2, weekly: 3, monthly: 8, name: 40 };
+  const MAX_DAYS = 366; // FR-SET-020
+
+  const FALLBACK_PLAN = {
+    revenue: [{ name: 'ยอดขายหน้าร้าน', weight: 100 }],
+    expenses: [
+      { name: 'ซื้อวัตถุดิบ/สินค้า', pct: 30, freq: 'weekly' },
+      { name: 'ค่าแรงพนักงาน', pct: 15, freq: 'monthly', day: 28 },
+      { name: 'ค่าเช่าที่', pct: 10, freq: 'monthly', day: 1 },
+      { name: 'ค่าน้ำ ค่าไฟ', pct: 5, freq: 'monthly', day: 5 },
+      { name: 'ค่าใช้จ่ายจิปาถะ', pct: 5, freq: 'daily' },
+    ],
+  };
+
+  const num = (v, lo, hi, dflt) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : dflt;
+  };
+  const text = (v) => String(v ?? '').replace(/[\u0000-\u001f<>]/g, ' ').trim().slice(0, LIMITS.name);
+
+  /** รับค่าอะไรก็ได้ คืนแผนที่ปลอดภัย หรือ null ถ้าใช้ไม่ได้ */
+  function sanitizePlan(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const revenue = (Array.isArray(raw.revenue) ? raw.revenue : [])
+      .map((r) => ({ name: text(r && r.name), weight: num(r && r.weight, 1, 100, 1) }))
+      .filter((r) => r.name)
+      .slice(0, LIMITS.revenue);
+    const count = { daily: 0, weekly: 0, monthly: 0 };
+    const expenses = [];
+    for (const e of Array.isArray(raw.expenses) ? raw.expenses : []) {
+      const freq = e && ['daily', 'weekly', 'monthly'].includes(e.freq) ? e.freq : null;
+      const name = text(e && e.name);
+      if (!freq || !name || count[freq] >= LIMITS[freq]) continue;
+      count[freq]++;
+      const item = { name, pct: num(e.pct, 0, 60, 1), freq };
+      if (freq === 'monthly') item.day = Math.round(num(e.day, 1, 28, 1));
+      expenses.push(item);
+    }
+    if (!revenue.length || !expenses.length) return null;
+    return { revenue, expenses };
+  }
+
+  /** ค่าตั้งค่าที่ AI เติมให้ (FR-BIZ-050): คืนเฉพาะค่าที่ใช้ได้ */
+  function sanitizeSettings(raw) {
+    const out = {};
+    if (!raw || typeof raw !== 'object') return out;
+    const money = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 && n <= 1e9 ? Math.round(n) : null; };
+    const one = money(raw.monthlyRevenue);
+    const lo = money(raw.monthlyRevenueMin) ?? one, hi = money(raw.monthlyRevenueMax) ?? one;
+    if (lo && hi) { out.monthMin = Math.min(lo, hi); out.monthMax = Math.max(lo, hi); }
+    const ok = (d) => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && new Date(d + 'T00:00:00Z').toISOString().slice(0, 10) === d;
+    const days = (Date.parse(raw.endDate) - Date.parse(raw.startDate)) / 864e5 + 1;
+    if (ok(raw.startDate) && ok(raw.endDate) && raw.startDate <= raw.endDate && days <= MAX_DAYS) {
+      out.startDate = raw.startDate;
+      out.endDate = raw.endDate;
+    }
+    return out;
+  }
+
+  return { FALLBACK_PLAN, sanitizePlan, sanitizeSettings, LIMITS };
+});
+
+</script>
+<script>
+/* ประเภทธุรกิจสำเร็จรูป: หมวดรายรับ หมวดรายจ่าย (% ของรายรับ) และช่วงรายรับตั้งต้น
+   ตัวเลขทุกตัวเป็นค่าสมมติ (รอยืนยัน) ไว้เป็นจุดเริ่ม ผู้ใช้ปรับได้ทั้งหมดในแผงตั้งค่า
+   รูปแบบหมวดตรงกับ sanitizePlan ใน plan.js */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.IE = Object.assign(root.IE || {}, api);
+})(typeof self !== 'undefined' ? self : this, function () {
+  const PRESETS = [
+    {
+      id: 'coffee', label: 'ร้านกาแฟ',
+      income: { monthMin: 100000, monthMax: 140000, dayMin: 3000, dayMax: 5000 },
+      revenue: [{ name: 'ขายกาแฟและเครื่องดื่ม', weight: 70 }, { name: 'ขายเบเกอรี่และขนม', weight: 25 }, { name: 'ขายเมล็ดกาแฟ', weight: 5 }],
+      expenses: [
+        { name: 'ซื้อเมล็ดกาแฟ นม วัตถุดิบ', pct: 28, freq: 'weekly' },
+        { name: 'แก้วและบรรจุภัณฑ์', pct: 4, freq: 'weekly' },
+        { name: 'ค่าแรงพนักงาน', pct: 18, freq: 'monthly', day: 28 },
+        { name: 'ค่าเช่าที่', pct: 12, freq: 'monthly', day: 1 },
+        { name: 'ค่าน้ำ ค่าไฟ', pct: 6, freq: 'monthly', day: 5 },
+        { name: 'ซ่อมเครื่องชงและค่าแก๊ส', pct: 2, freq: 'monthly', day: 15 },
+        { name: 'ค่าใช้จ่ายจิปาถะ', pct: 2, freq: 'daily' },
+      ],
+    },
+    {
+      id: 'food', label: 'ร้านอาหารตามสั่ง',
+      income: { monthMin: 120000, monthMax: 180000, dayMin: 4000, dayMax: 6500 },
+      revenue: [{ name: 'ขายอาหารหน้าร้าน', weight: 65 }, { name: 'ขายเดลิเวอรี', weight: 25 }, { name: 'ขายเครื่องดื่ม', weight: 10 }],
+      expenses: [
+        { name: 'ซื้อวัตถุดิบสด', pct: 22, freq: 'daily' },
+        { name: 'ค่าใช้จ่ายจิปาถะ', pct: 2, freq: 'daily' },
+        { name: 'ซื้อวัตถุดิบแห้งและของใช้', pct: 8, freq: 'weekly' },
+        { name: 'ค่าแก๊สหุงต้ม', pct: 4, freq: 'weekly' },
+        { name: 'ค่าธรรมเนียมแอปเดลิเวอรี', pct: 3, freq: 'weekly' },
+        { name: 'ค่าแรงพนักงาน', pct: 15, freq: 'monthly', day: 28 },
+        { name: 'ค่าเช่าที่', pct: 8, freq: 'monthly', day: 1 },
+        { name: 'ค่าน้ำ ค่าไฟ', pct: 5, freq: 'monthly', day: 5 },
+      ],
+    },
+    {
+      id: 'online', label: 'ขายของออนไลน์',
+      income: { monthMin: 150000, monthMax: 250000, dayMin: 5000, dayMax: 8500 },
+      revenue: [{ name: 'ยอดขาย Shopee', weight: 45 }, { name: 'ยอดขาย TikTok Shop', weight: 30 }, { name: 'ยอดขาย LINE และ Facebook', weight: 25 }],
+      expenses: [
+        { name: 'ซื้อสินค้าเข้าสต็อก', pct: 45, freq: 'weekly' },
+        { name: 'ค่าธรรมเนียมแพลตฟอร์ม', pct: 8, freq: 'weekly' },
+        { name: 'ค่าขนส่งพัสดุ', pct: 7, freq: 'weekly' },
+        { name: 'ค่าโฆษณา', pct: 8, freq: 'monthly', day: 15 },
+        { name: 'ค่าแรงแอดมิน', pct: 8, freq: 'monthly', day: 28 },
+        { name: 'ค่าเช่าที่เก็บของ', pct: 3, freq: 'monthly', day: 1 },
+        { name: 'ค่าอินเทอร์เน็ต', pct: 1, freq: 'monthly', day: 5 },
+      ],
+    },
+    {
+      id: 'garage', label: 'อู่ซ่อมรถ',
+      income: { monthMin: 200000, monthMax: 300000, dayMin: 7000, dayMax: 11000 },
+      revenue: [{ name: 'ค่าแรงซ่อม', weight: 50 }, { name: 'ขายอะไหล่', weight: 40 }, { name: 'น้ำมันเครื่องและของเหลว', weight: 10 }],
+      expenses: [
+        { name: 'ซื้ออะไหล่', pct: 30, freq: 'weekly' },
+        { name: 'ซื้อน้ำมันเครื่องและสารหล่อลื่น', pct: 8, freq: 'weekly' },
+        { name: 'ค่าแรงช่าง', pct: 18, freq: 'monthly', day: 28 },
+        { name: 'ค่าเช่าที่', pct: 6, freq: 'monthly', day: 1 },
+        { name: 'ค่าน้ำ ค่าไฟ', pct: 4, freq: 'monthly', day: 5 },
+        { name: 'ซ่อมบำรุงเครื่องมือ', pct: 3, freq: 'monthly', day: 20 },
+        { name: 'ค่าใช้จ่ายจิปาถะ', pct: 1, freq: 'daily' },
+      ],
+    },
+    {
+      id: 'dorm', label: 'หอพักให้เช่า',
+      income: { monthMin: 90000, monthMax: 120000, dayMin: 3000, dayMax: 4000 },
+      revenue: [{ name: 'ค่าเช่าห้อง', weight: 80 }, { name: 'ค่าน้ำ ค่าไฟที่เก็บจากผู้เช่า', weight: 18 }, { name: 'ค่าบริการอื่น', weight: 2 }],
+      expenses: [
+        { name: 'ค่าน้ำประปา ค่าไฟฟ้า (จ่ายจริง)', pct: 14, freq: 'monthly', day: 5 },
+        { name: 'ค่าแม่บ้านและ รปภ.', pct: 10, freq: 'monthly', day: 28 },
+        { name: 'ซ่อมบำรุงห้องพัก', pct: 6, freq: 'monthly', day: 15 },
+        { name: 'ค่าอินเทอร์เน็ตและส่วนกลาง', pct: 3, freq: 'monthly', day: 5 },
+        { name: 'ภาษีที่ดินและประกัน', pct: 3, freq: 'monthly', day: 20 },
+      ],
+    },
+    {
+      id: 'freelance', label: 'ฟรีแลนซ์ออกแบบ',
+      income: { monthMin: 40000, monthMax: 90000, dayMin: 1500, dayMax: 3500 },
+      revenue: [{ name: 'งานออกแบบโลโก้', weight: 40 }, { name: 'งานคอนเทนต์โซเชียล', weight: 40 }, { name: 'งานแก้ไขเพิ่มเติม', weight: 20 }],
+      expenses: [
+        { name: 'ค่าเดินทางพบลูกค้า', pct: 3, freq: 'weekly' },
+        { name: 'ค่าอาหารและจิปาถะ', pct: 4, freq: 'weekly' },
+        { name: 'ซอฟต์แวร์และสมาชิกรายเดือน', pct: 6, freq: 'monthly', day: 1 },
+        { name: 'ค่าอินเทอร์เน็ตและโทรศัพท์', pct: 3, freq: 'monthly', day: 5 },
+        { name: 'ค่าไฟและที่ทำงาน', pct: 6, freq: 'monthly', day: 5 },
+        { name: 'ซื้ออุปกรณ์และฟอนต์', pct: 4, freq: 'monthly', day: 15 },
+        { name: 'ค่าบัญชีและภาษี', pct: 4, freq: 'monthly', day: 25 },
+      ],
+    },
+    {
+      id: 'retail', label: 'ร้านขายของชำ',
+      income: { monthMin: 150000, monthMax: 220000, dayMin: 5000, dayMax: 7500 },
+      revenue: [{ name: 'ขายสินค้าอุปโภคบริโภค', weight: 70 }, { name: 'ขายเครื่องดื่มและขนม', weight: 20 }, { name: 'บริการเติมเงินและจ่ายบิล', weight: 10 }],
+      expenses: [
+        { name: 'ซื้อสินค้าเข้าร้าน', pct: 60, freq: 'weekly' },
+        { name: 'ค่าใช้จ่ายจิปาถะ', pct: 1, freq: 'daily' },
+        { name: 'ค่าแรงพนักงาน', pct: 8, freq: 'monthly', day: 28 },
+        { name: 'ค่าเช่าที่', pct: 5, freq: 'monthly', day: 1 },
+        { name: 'ค่าน้ำ ค่าไฟ', pct: 4, freq: 'monthly', day: 5 },
+      ],
+    },
+    {
+      id: 'salon', label: 'ร้านเสริมสวย',
+      income: { monthMin: 80000, monthMax: 130000, dayMin: 2500, dayMax: 4500 },
+      revenue: [{ name: 'ค่าบริการตัดและทำผม', weight: 55 }, { name: 'ค่าบริการทำสีและดัด', weight: 30 }, { name: 'ขายผลิตภัณฑ์ดูแลผม', weight: 15 }],
+      expenses: [
+        { name: 'ซื้อน้ำยาและวัสดุ', pct: 15, freq: 'weekly' },
+        { name: 'ค่าใช้จ่ายจิปาถะ', pct: 2, freq: 'daily' },
+        { name: 'ค่าแรงช่างและค่าคอมมิชชัน', pct: 30, freq: 'monthly', day: 28 },
+        { name: 'ค่าเช่าที่', pct: 10, freq: 'monthly', day: 1 },
+        { name: 'ค่าน้ำ ค่าไฟ', pct: 6, freq: 'monthly', day: 5 },
+      ],
+    },
+  ];
+
+  return { PRESETS };
+});
+
+</script>
+<script>
+/* ตัวสร้างรายการรายรับรายจ่ายจากแผน (FR-GEN-*, BR-030/040/050) — ฟังก์ชันล้วน ไม่แตะหน้าจอ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.IE = Object.assign(root.IE || {}, api);
+})(typeof self !== 'undefined' ? self : this, function () {
+  const MAX_DAYS = 366;
+  const STEP = 10; // BR-040
+
+  const eachDay = (start, end) => {
+    const out = [];
+    const d = new Date(start + 'T00:00:00Z');
+    const e = new Date(end + 'T00:00:00Z');
+    for (; d <= e; d.setUTCDate(d.getUTCDate() + 1)) out.push(d.toISOString().slice(0, 10));
+    return out;
+  };
+  const weekday = (iso) => new Date(iso + 'T00:00:00Z').getUTCDay();
+  const monthsIn = (start, end) => [...new Set(eachDay(start, end).map((d) => d.slice(0, 7)))];
+  const dayCount = (start, end) => Math.round((Date.parse(end) - Date.parse(start)) / 864e5) + 1;
+  const round2 = (n) => Math.round(n * 100) / 100;
+
+  /** แบ่ง total ตามน้ำหนัก ปัดเป็นผลคูณของ STEP แถวสุดท้ายรับเศษ → ผลรวมตรง total พอดี */
+  function split(total, weights) {
+    const sum = weights.reduce((a, b) => a + b, 0);
+    const out = [];
+    let used = 0;
+    weights.forEach((w, i) => {
+      const last = i === weights.length - 1;
+      const v = last ? round2(total - used) : Math.round((total * w) / sum / STEP) * STEP;
+      out.push(v);
+      used = round2(used + v);
+    });
+    return out;
+  }
+
+  const pick = (items, rng) => {
+    let r = rng() * items.reduce((a, i) => a + i.weight, 0);
+    for (const it of items) if ((r -= it.weight) <= 0) return it;
+    return items[items.length - 1];
+  };
+  /** น้ำหนักของวัน: ส.-อา. บวก boost · ศุกร์ได้ครึ่งหนึ่ง · สุ่ม ±jitter (ค่าเป็นสัดส่วน 0.3 = 30%) */
+  const dayWeight = (iso, rng, boost, jitter) => {
+    const wd = weekday(iso);
+    const base = wd === 0 || wd === 6 ? 1 + boost : wd === 5 ? 1 + boost / 2 : 1;
+    return base * (1 - jitter + 2 * jitter * rng());
+  };
+
+  /** ตัวสุ่มที่ผลซ้ำได้เมื่อใช้ seed เดิม (mulberry32) */
+  const toSeed = (s) => { let h = 2166136261; for (const c of String(s)) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
+  const seeded = (seed) => {
+    let a = toSeed(seed);
+    return () => {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  };
+  const has = (v) => v !== undefined && v !== null && v !== '' && Number.isFinite(Number(v));
+  const pctOf = (v, dflt, hi) => (has(v) ? Math.min(hi, Math.max(0, Number(v))) : dflt) / 100;
+
+  /** ช่วง [min,max] ที่สลับให้ถูกลำดับ และไม่ติดลบ */
+  const range = (a, b) => {
+    const lo = Math.max(0, Number(a) || 0), hi = Math.max(0, Number(b) || 0);
+    return lo <= hi ? [lo, hi] : [hi, lo];
+  };
+  const randIn = (lo, hi, rng, step) => Math.round((lo + (hi - lo) * rng()) / step) * step;
+  /** เป้ารายเดือนที่สุ่ม: ผลคูณของ 100 ที่อยู่ในช่วง [lo,hi] · ช่วงแคบจนไม่มีผลคูณ 100 → ค่าเต็มบาทในช่วง (FR-GEN-020 ชนะ FR-SET-030) */
+  const randTarget = (lo, hi, rng) => {
+    const a = Math.ceil(lo / 100) * 100, b = Math.floor(hi / 100) * 100;
+    return a <= b ? a + Math.round((rng() * (b - a)) / 100) * 100 : Math.round(lo + (hi - lo) * rng());
+  };
+
+  /**
+   * settings: { start, end, mode: 'month'|'day',
+   *   monthMin, monthMax        — ช่วงรายรับต่อเดือน (โหมด month) แต่ละเดือนสุ่มในช่วง
+   *   monthlyRevenue: {'YYYY-MM': n} — กำหนดเดือนใดเดือนหนึ่งเอง (ชนะการสุ่ม)
+   *   dayMin, dayMax            — ช่วงรายรับต่อวันเปิด (โหมด day) ยอดเดือน = ผลรวมของวัน
+   *   closedWeekdays, closedDates
+   *   margin        — กำไรเป้าหมาย % (เว้นว่าง = ใช้ % รายจ่ายตามแผน)
+   *   weekendPct    — ส.-อา. ขายดีกว่าวันธรรมดากี่ % (ศุกร์ได้ครึ่งหนึ่ง) ค่าตั้งต้น 30 · ใช้ในโหมด month
+   *   jitterPct     — ความผันผวนรายวัน ± % ค่าตั้งต้น 25 · ใช้ในโหมด month
+   *   season, seasonPct — { 1..12: 'peak'|'slow' } คูณยอดเดือนนั้นด้วย 1±seasonPct (ตั้งต้น 25) ทั้ง 2 โหมด
+   *   txMin, txMax  — จำนวนรายการรายรับต่อวันเปิด (1-6) ตั้งต้น 1
+   *   seed          — ใส่แล้วผลสุ่มซ้ำได้ }
+   * plan: ผ่าน sanitizePlan แล้ว · คืนรายการ [{date,name,income,expense}] (ยังไม่มี id)
+   */
+  function generate(settings, plan, rng) {
+    const { start, end, mode = 'month', monthlyRevenue = {}, closedWeekdays = [], closedDates = [], season = {} } = settings;
+    rng = rng || (String(settings.seed ?? '') !== '' ? seeded(settings.seed) : Math.random);
+    const [mMin, mMax] = range(settings.monthMin, settings.monthMax);
+    const [dMin, dMax] = range(settings.dayMin, settings.dayMax);
+    const [tMin, tMax] = range(Math.max(1, settings.txMin || 1), Math.max(1, settings.txMax || settings.txMin || 1));
+    const boost = pctOf(settings.weekendPct, 30, 100), jitter = pctOf(settings.jitterPct, 25, 60), seasonP = pctOf(settings.seasonPct, 25, 60);
+    const planPct = plan.expenses.reduce((a, e) => a + e.pct, 0);
+    const scale = has(settings.margin) && planPct > 0 ? (100 - Math.min(95, Math.max(0, Number(settings.margin)))) / planPct : 1;
+    const rows = [];
+    const days = eachDay(start, end);
+    for (const month of monthsIn(start, end)) {
+      const open = days.filter(
+        (d) => d.startsWith(month) && !closedWeekdays.includes(weekday(d)) && !closedDates.includes(d)
+      );
+      if (!open.length) continue;
+      const kind = season[Number(month.slice(5))];
+      const f = kind === 'peak' ? 1 + seasonP : kind === 'slow' ? 1 - seasonP : 1;
+
+      let incomes, target;
+      if (mode === 'day') {
+        incomes = open.map(() => randIn(dMin * f, dMax * f, rng, STEP));
+        target = round2(incomes.reduce((a, b) => a + b, 0));
+      } else {
+        target = Number(monthlyRevenue[month]) > 0 ? Number(monthlyRevenue[month]) : randTarget(mMin * f, mMax * f, rng);
+        incomes = target > 0 ? split(target, open.map((d) => dayWeight(d, rng, boost, jitter))) : [];
+      }
+      if (target <= 0) continue;
+
+      incomes.forEach((income, i) => {
+        if (income <= 0) return;
+        // แตกยอดวันเป็นหลายรายการ แต่ละรายการอย่างน้อย ~100 บาท (กันเศษปัดเป็นลบ)
+        const n = Math.max(1, Math.min(Math.round(tMin + (tMax - tMin) * rng()), Math.floor(income / 100), 6));
+        const parts = n > 1 ? split(income, Array.from({ length: n }, () => 0.6 + 0.8 * rng())) : [income];
+        for (const v of parts) rows.push({ date: open[i], name: pick(plan.revenue, rng).name, income: v, expense: 0 });
+      });
+
+      for (const e of plan.expenses) {
+        const total = round2((target * e.pct * scale) / 100);
+        let dates;
+        if (e.freq === 'daily') dates = open;
+        else if (e.freq === 'weekly') {
+          const gap = Math.max(1, Math.round(open.length / 4));
+          dates = open.filter((_, i) => i % gap === 0).slice(0, 4);
+        } else {
+          const want = `${month}-${String(e.day).padStart(2, '0')}`;
+          dates = days.includes(want) ? [want] : [];
+        }
+        if (!dates.length || total <= 0) continue;
+        const w = e.freq === 'monthly' ? [1] : dates.map(() => 0.6 + 0.8 * rng());
+        split(total, w).forEach((expense, i) => rows.push({ date: dates[i], name: e.name, income: 0, expense }));
+      }
+    }
+    return sortRows(rows);
+  }
+
+  /** เรียงตามวันที่ คงลำดับเดิมในวันเดียวกัน (FR-TBL-020) */
+  const sortRows = (rows) =>
+    rows.map((r, i) => [r, i]).sort((a, b) => a[0].date.localeCompare(b[0].date) || a[1] - b[1]).map((x) => x[0]);
+
+  /** คืนยอดคงเหลือทีละแถว (FR-TBL-030) */
+  function balances(rows, opening = 0) {
+    let bal = Number(opening) || 0;
+    return rows.map((r) => (bal = round2(bal + (Number(r.income) || 0) - (Number(r.expense) || 0))));
+  }
+
+  function totals(rows, opening = 0) {
+    const income = round2(rows.reduce((a, r) => a + (Number(r.income) || 0), 0));
+    const expense = round2(rows.reduce((a, r) => a + (Number(r.expense) || 0), 0));
+    return { income, expense, balance: round2((Number(opening) || 0) + income - expense), count: rows.length };
+  }
+
+  /** BR-010/020: แปลงค่าที่พิมพ์เป็นจำนวนเงินที่ใช้ได้ (≥ 0 ทศนิยม ≤ 2) */
+  const toMoney = (v) => {
+    const n = Number(String(v).replace(/,/g, ''));
+    return Number.isFinite(n) && n > 0 ? round2(n) : 0;
+  };
+
+  return { MAX_DAYS, seeded, eachDay, weekday, monthsIn, dayCount, split, generate, sortRows, balances, totals, toMoney, round2 };
+});
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+
+/* mockup: ตัวแทน Typhoon ที่ตอบเร็วและตอบแบบเดียวทุกครั้ง */
+window.__mockAi = 'up';
+window.fetch = async () => {
+  await new Promise((r) => setTimeout(r, 700));
+  if (window.__mockAi === 'down') throw new Error('mock: AI down');
+  return { ok: true, json: async () => ({ source: 'typhoon', note: '', settings: { monthlyRevenueMin: 100000, monthlyRevenueMax: 140000 }, plan: {
+    revenue: [{ name: 'ขายกาแฟ', weight: 60 }, { name: 'ขายเบเกอรี่', weight: 28 }, { name: 'ขายเมล็ดกาแฟ', weight: 12 }],
+    expenses: [
+      { name: 'ซื้อเมล็ดกาแฟ นม วัตถุดิบ', pct: 24, freq: 'weekly' }, { name: 'ซื้อเบเกอรี่จากโรงงาน', pct: 10, freq: 'weekly' },
+      { name: 'ค่าเช่าร้าน', pct: 12, freq: 'monthly', day: 1 }, { name: 'เงินเดือนพนักงาน 2 คน', pct: 18, freq: 'monthly', day: 30 },
+      { name: 'ค่าไฟฟ้า', pct: 4, freq: 'monthly', day: 8 }, { name: 'ค่าน้ำประปา', pct: 0.8, freq: 'monthly', day: 8 },
+      { name: 'ค่าอินเทอร์เน็ต', pct: 0.6, freq: 'monthly', day: 10 }, { name: 'แก้วและบรรจุภัณฑ์', pct: 3, freq: 'daily' } ] } }) };
+};
+/* หน้าจอ IEGEN: ตาราง (ซ้าย) + แผงตั้งค่า (ขวา) + ส่งออก Excel (ตรรกะอยู่ใน ledger.js / plan.js / presets.js) */
+(function () {
+  const { generate, sortRows, balances, totals, toMoney, monthsIn, dayCount, eachDay, weekday, MAX_DAYS, FALLBACK_PLAN, sanitizePlan, sanitizeSettings, LIMITS, PRESETS } = window.IE;
+  const $ = (id) => document.getElementById(id);
+  const KEY = 'iegen.v1';
+  const OTHER = 'other';
+  const MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  const FREQ = { daily: 'ทุกวัน', weekly: 'รายสัปดาห์', monthly: 'รายเดือน' };
+  const WDAYS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+  const fmt = (n) => Number(n).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const isoLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const thDate = (iso) => { const [y, m, d] = iso.split('-'); return `${d}/${m}/${Number(y) + 543}`; };
+
+  function defaults() {
+    const n = new Date();
+    const start = isoLocal(new Date(n.getFullYear(), n.getMonth(), 1));
+    const end = isoLocal(new Date(n.getFullYear(), n.getMonth() + 1, 0));
+    return { settings: { type: '', biz: '', start, end, opening: 0, mode: 'month', monthMin: 80000, monthMax: 100000, dayMin: 2000, dayMax: 5000, monthlyRevenue: {}, closedWeekdays: [0], closedDates: [], margin: '', weekendPct: 30, jitterPct: 25, season: {}, seasonPct: 25, txMin: 1, txMax: 2, seed: '' }, rows: [], plan: null, prevRows: null, nextId: 1 };
+  }
+  let state = load();
+  function load() {
+    try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.settings && Array.isArray(s.rows)) {
+        const d = defaults(); const st = s.settings; delete s.chat;
+        if (st.defaultRevenue && st.monthMin === undefined) st.monthMin = st.monthMax = st.defaultRevenue; // ข้อมูลรุ่นเก่า
+        return Object.assign(d, s, { settings: Object.assign(d.settings, st) });
+      } } catch (e) { /* ใช้ค่าตั้งต้น */ }
+    return defaults();
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* โหมดส่วนตัว: ไม่เก็บ */ } }
+
+  const S = () => state.settings;
+  const validRange = () => S().start && S().end && S().start <= S().end && dayCount(S().start, S().end) <= MAX_DAYS;
+  /** ข้อความบอกว่าช่วงวันที่ผิดตรงไหน (FR-SET-020) · ถูกแล้วคืนข้อความว่าง */
+  const rangeError = () => (!S().start || !S().end ? 'กรอกวันที่เริ่มและวันที่สิ้นสุดให้ครบ' : S().start > S().end ? 'วันที่เริ่มต้องไม่เกินวันที่สิ้นสุด' : dayCount(S().start, S().end) > MAX_DAYS ? `ช่วงวันที่ต้องไม่เกิน ${MAX_DAYS} วัน` : '');
+
+  /* ---------- ตั้งค่า ---------- */
+
+  function renderSettings() {
+    $('mmin').value = S().monthMin; $('mmax').value = S().monthMax; $('dmin').value = S().dayMin; $('dmax').value = S().dayMax;
+    document.querySelectorAll('#mode [data-mode]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === S().mode));
+    if (validRange()) {
+      const open = eachDay(S().start, S().end).filter((d) => !S().closedWeekdays.includes(weekday(d)) && !S().closedDates.includes(d)).length;
+      const per = open / monthsIn(S().start, S().end).length;
+      const k = (n) => Math.round(n).toLocaleString('th-TH');
+      $('day-est').textContent = `ประมาณเดือนละ ${k(per * S().dayMin)} – ${k(per * S().dayMax)} บาท (เปิดเฉลี่ย ${per.toFixed(1)} วัน/เดือน)`;
+    }
+    $('box-month').hidden = S().mode !== 'month'; $('box-day').hidden = S().mode !== 'day';
+    $('biz').value = S().biz; $('start').value = S().start; $('end').value = S().end; $('opening').value = S().opening || '';
+    const box = $('months'), keys = validRange() ? monthsIn(S().start, S().end) : [];
+    if (box.dataset.keys === keys.join()) box.querySelectorAll('input').forEach((i) => { if (document.activeElement !== i) i.value = S().monthlyRevenue[i.dataset.m] || ''; }); // ไม่สร้างใหม่ถ้าเดือนเท่าเดิม (กันคลิกหลุดตอนช่องเสียโฟกัส)
+    else { box.dataset.keys = keys.join(); box.textContent = ''; for (const m of keys) {
+      const [y, mo] = m.split('-');
+      const l = document.createElement('label');
+      l.append(`${mo}/${Number(y) + 543}`);
+      const i = document.createElement('input'); i.type = 'number'; i.min = '0'; i.step = '1'; i.placeholder = 'สุ่มในช่วง'; i.value = S().monthlyRevenue[m] || ''; i.dataset.m = m; i.setAttribute('aria-label', `รายรับเป้าหมายเดือน ${mo}/${Number(y) + 543}`);
+      l.append(i); box.append(l);
+    } }
+    const w = $('wdays');
+    if (!w.children.length) WDAYS.forEach((name, i) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = name; b.dataset.wd = i; b.title = 'หยุดวัน' + name; w.append(b);
+    });
+    [...w.children].forEach((b, i) => b.setAttribute('aria-pressed', S().closedWeekdays.includes(i)));
+    $('closed-count').textContent = `(${S().closedDates.length})`;
+    const c = $('closed-dates'); c.textContent = '';
+    for (const d of S().closedDates) {
+      const s = document.createElement('span'); s.className = 'chip date'; s.textContent = thDate(d);
+      const x = document.createElement('button'); x.type = 'button'; x.textContent = '×'; x.dataset.rm = d; x.setAttribute('aria-label', 'ลบวันหยุด ' + thDate(d));
+      s.append(x); c.append(s);
+    }
+    renderTypes(); renderAdv();
+    const err = rangeError();
+    $('settings-err').hidden = !err; $('settings-err').textContent = err;
+  }
+
+  function bindSettings() {
+    $('biz').addEventListener('input', (e) => { S().biz = e.target.value; save(); });
+    for (const id of ['start', 'end']) $(id).addEventListener('change', (e) => { S()[id] = e.target.value; save(); renderSettings(); });
+    $('opening').addEventListener('change', (e) => { S().opening = toMoney(e.target.value); e.target.value = S().opening || ''; save(); refreshBalances(); });
+    $('months').addEventListener('change', (e) => {
+      const v = Math.max(0, Number(e.target.value) || 0);
+      if (v) S().monthlyRevenue[e.target.dataset.m] = v; else delete S().monthlyRevenue[e.target.dataset.m];
+      e.target.value = v || ''; save();
+    });
+    $('mode').addEventListener('click', (e) => { const b = e.target.closest('[data-mode]'); if (!b) return; S().mode = b.dataset.mode; save(); renderSettings(); });
+    for (const [lo, hi, a, b] of [['mmin', 'mmax', 'monthMin', 'monthMax'], ['dmin', 'dmax', 'dayMin', 'dayMax']]) {
+      for (const id of [lo, hi]) $(id).addEventListener('change', () => {
+        let x = Math.max(0, Number($(lo).value) || 0), y = Math.max(0, Number($(hi).value) || 0);
+        if (x > y) [x, y] = [y, x]; // ใส่สลับก็ใช้ได้
+        S()[a] = x; S()[b] = y; save(); renderSettings();
+      });
+    }
+    $('wdays').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-wd]'); if (!b) return; const i = Number(b.dataset.wd);
+      S().closedWeekdays = S().closedWeekdays.includes(i) ? S().closedWeekdays.filter((x) => x !== i) : [...S().closedWeekdays, i].sort(); save(); renderSettings();
+    });
+    $('btn-closed-add').addEventListener('click', () => {
+      const d = $('closed-new').value; if (!d || S().closedDates.includes(d)) return;
+      S().closedDates = [...S().closedDates, d].sort(); $('closed-new').value = ''; save(); renderSettings();
+    });
+    $('closed-dates').addEventListener('click', (e) => { const b = e.target.closest('[data-rm]'); if (!b) return; S().closedDates = S().closedDates.filter((d) => d !== b.dataset.rm); save(); renderSettings(); });
+  }
+
+  /* ---------- ประเภทธุรกิจ + หมวดรายรับ/รายจ่าย ---------- */
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const typeLabel = (id) => (id === OTHER ? 'อื่น ๆ (พิมพ์เอง)' : (PRESETS.find((p) => p.id === id) || {}).label || '');
+  const mk = (tag, props, label) => { const e = document.createElement(tag); Object.assign(e, props); if (label) e.setAttribute('aria-label', label); return e; };
+
+  function renderTypes() {
+    const box = $('types');
+    if (!box.children.length) for (const id of [...PRESETS.map((p) => p.id), OTHER]) {
+      const b = mk('button', { type: 'button', className: 'chip', textContent: typeLabel(id) }); b.dataset.type = id; box.append(b);
+    }
+    [...box.children].forEach((b) => b.setAttribute('aria-pressed', S().type === b.dataset.type));
+    $('other-box').hidden = S().type !== OTHER; $('btn-ai').hidden = !S().type;
+  }
+
+  function selectType(id) {
+    S().type = id;
+    if (id === OTHER) {
+      if (!state.plan) state.plan = clone(FALLBACK_PLAN);
+      toast('ใช้หมวดมาตรฐานกลาง · พิมพ์ประเภทธุรกิจแล้วกด “ให้ AI ปรับหมวด” หรือแก้เองได้');
+    } else {
+      const p = PRESETS.find((x) => x.id === id);
+      state.plan = clone({ revenue: p.revenue, expenses: p.expenses });
+      Object.assign(S(), p.income, { monthlyRevenue: {} });
+      toast(`ใส่หมวดและช่วงรายรับตั้งต้นของ “${p.label}” แล้ว · ค่าเป็นค่าสมมติ ปรับได้`);
+    }
+    save(); renderSettings(); renderPlan();
+    if (id === OTHER) $('biz').focus();
+  }
+
+  function head(...cols) {
+    const row = mk('div', { className: 'prow head' + (cols.length > 3 ? ' exp' : '') });
+    for (const c of cols) { const s = mk('span'); if (c) { s.append(c[0]); s.append(mk('small', { textContent: c[1] })); } row.append(s); }
+    row.append(mk('span')); return row;
+  }
+
+  function renderPlan() {
+    const rev = $('rev-list'), exp = $('exp-list'); rev.textContent = ''; exp.textContent = '';
+    const P = state.plan; if (!P) return renderExpSum();
+    if (P.revenue.length) rev.append(head(['ชื่อหมวด', 'รายรับมาจากอะไร'], ['สัดส่วน', 'เทียบกัน']));
+    if (P.expenses.length) exp.append(head(['ชื่อหมวด', 'จ่ายค่าอะไร'], ['%', 'ของรายรับ'], ['ความถี่', 'จ่ายบ่อยแค่ไหน'], ['วันที่', 'รายเดือน']));
+    P.revenue.forEach((r, i) => {
+      const row = mk('div', { className: 'prow' }); row.dataset.k = 'revenue'; row.dataset.i = i;
+      const n = mk('input', { type: 'text', maxLength: LIMITS.name, value: r.name }, 'ชื่อหมวดรายรับ'); n.dataset.f = 'name';
+      const w = mk('input', { type: 'number', min: '1', max: '100', step: '1', value: r.weight }, 'สัดส่วนของหมวดรายรับ'); w.dataset.f = 'weight';
+      row.append(n, w, mk('button', { type: 'button', className: 'rm', textContent: '×' }, 'ลบหมวดรายรับนี้')); rev.append(row);
+    });
+    P.expenses.forEach((e, i) => {
+      const row = mk('div', { className: 'prow exp' }); row.dataset.k = 'expenses'; row.dataset.i = i;
+      const n = mk('input', { type: 'text', maxLength: LIMITS.name, value: e.name }, 'ชื่อหมวดรายจ่าย'); n.dataset.f = 'name';
+      const p = mk('input', { type: 'number', min: '0', max: '60', step: '0.5', value: e.pct }, 'ร้อยละของรายรับ'); p.dataset.f = 'pct';
+      const f = mk('select', {}, 'ความถี่ที่จ่าย'); f.dataset.f = 'freq';
+      for (const [v, t] of Object.entries(FREQ)) f.append(mk('option', { value: v, textContent: t, selected: v === e.freq }));
+      let d = mk('span');
+      if (e.freq === 'monthly') { d = mk('input', { type: 'number', min: '1', max: '28', step: '1', value: e.day || 1, placeholder: 'วันที่' }, 'จ่ายวันที่ของเดือน'); d.dataset.f = 'day'; }
+      row.append(n, p, f, d, mk('button', { type: 'button', className: 'rm', textContent: '×' }, 'ลบหมวดรายจ่ายนี้'));
+      exp.append(row);
+    });
+    renderExpSum();
+  }
+
+  function renderExpSum() {
+    const el = $('exp-sum'); const P = state.plan; if (!P) { el.textContent = ''; return; }
+    const r = (n) => Math.round(n * 10) / 10, sum = P.expenses.reduce((a, e) => a + (Number(e.pct) || 0), 0), m = S().margin;
+    el.textContent = m !== '' && m != null
+      ? `รวมตามหมวด ${r(sum)}% → ปรับสัดส่วนให้เหลือกำไร ${m}% (รายจ่ายรวม ${r(100 - m)}%)`
+      : `รายจ่ายรวม ${r(sum)}% ของรายรับ → ${sum < 100 ? `กำไรประมาณ ${r(100 - sum)}%` : 'ขาดทุน (รายจ่ายเกินรายรับ)'}`;
+  }
+
+  const FIELD = { pct: [0, 60, 0], day: [1, 28, 1], weight: [1, 100, 1] };
+  function bindPlan() {
+    for (const id of ['rev-list', 'exp-list']) {
+      const box = $(id);
+      const itemOf = (el) => { const row = el.closest('.prow'); return row && { row, list: state.plan[row.dataset.k], i: Number(row.dataset.i) }; };
+      box.addEventListener('input', (e) => {
+        const f = e.target.dataset.f, at = itemOf(e.target); if (!at || !f || f === 'freq') return;
+        at.list[at.i][f] = f === 'name' ? e.target.value : Number(e.target.value); save(); renderExpSum();
+      });
+      box.addEventListener('change', (e) => {
+        const at = itemOf(e.target), key = e.target.dataset.f;
+        if (at && FIELD[key]) { // ปรับค่านอกช่วงเป็นค่าขอบ ไม่ปฏิเสธ (D-06): % 0–60 · วันที่ 1–28 · สัดส่วน 1–100
+          const [lo, hi, dflt] = FIELD[key], v = e.target.value === '' ? dflt : Math.min(hi, Math.max(lo, Number(e.target.value) || lo));
+          at.list[at.i][key] = key === 'pct' ? v : Math.round(v); e.target.value = at.list[at.i][key]; save(); renderExpSum(); return;
+        }
+        if (key !== 'freq') return;
+        const it = at.list[at.i], f = e.target.value;
+        if (f !== it.freq && state.plan.expenses.filter((x) => x.freq === f).length >= LIMITS[f]) toast(`หมวด “${FREQ[f]}” เต็มแล้ว (ไม่เกิน ${LIMITS[f]} หมวด)`);
+        else { it.freq = f; if (f === 'monthly') it.day = it.day || 1; else delete it.day; save(); }
+        renderPlan();
+      });
+      box.addEventListener('click', (e) => {
+        if (!e.target.closest('.rm')) return;
+        const at = itemOf(e.target); at.list.splice(at.i, 1); save(); renderPlan();
+      });
+    }
+    $('btn-rev-add').addEventListener('click', () => {
+      if (!state.plan) return toast('เลือกประเภทธุรกิจก่อน');
+      if (state.plan.revenue.length >= LIMITS.revenue) return toast(`หมวดรายรับไม่เกิน ${LIMITS.revenue} หมวด`);
+      state.plan.revenue.push({ name: 'รายรับใหม่', weight: 10 }); save(); renderPlan(); const l = [...$('rev-list').querySelectorAll('[data-f=name]')].pop(); l.focus(); l.select();
+    });
+    $('btn-exp-add').addEventListener('click', () => {
+      if (!state.plan) return toast('เลือกประเภทธุรกิจก่อน');
+      const freq = ['monthly', 'weekly', 'daily'].find((f) => state.plan.expenses.filter((x) => x.freq === f).length < LIMITS[f]);
+      if (!freq) return toast('หมวดรายจ่ายเต็มแล้ว ลบหมวดเดิมก่อน');
+      state.plan.expenses.push(freq === 'monthly' ? { name: 'รายจ่ายใหม่', pct: 1, freq, day: 1 } : { name: 'รายจ่ายใหม่', pct: 1, freq });
+      save(); renderPlan(); const l = [...$('exp-list').querySelectorAll('[data-f=name]')].pop(); l.focus(); l.select();
+    });
+  }
+
+  /* ---------- จังหวะการขาย / ความละเอียด ---------- */
+  const ADV_NUM = { weekendPct: [0, 100, 30], seasonPct: [0, 60, 25], jitterPct: [0, 60, 25], txMin: [1, 6, 1], txMax: [1, 6, 2] };
+  function renderAdv() {
+    for (const id of [...Object.keys(ADV_NUM), 'seed', 'margin']) $(id).value = S()[id];
+    const box = $('season');
+    if (!box.children.length) MONTHS.forEach((name, i) => { const b = mk('button', { type: 'button', className: 'chip' }); b.dataset.m = i + 1; box.append(b); });
+    [...box.children].forEach((b, i) => {
+      const k = S().season[i + 1];
+      b.textContent = MONTHS[i] + (k === 'peak' ? ' ▲' : k === 'slow' ? ' ▼' : '');
+      b.setAttribute('aria-label', `${MONTHS[i]} ${k === 'peak' ? 'ขายดี' : k === 'slow' ? 'ซบเซา' : 'ปกติ'}`); b.dataset.season = k || '';
+    });
+  }
+  function bindAdv() {
+    for (const [id, [lo, hi, dflt]] of Object.entries(ADV_NUM)) {
+      $(id).addEventListener('change', (e) => {
+        S()[id] = e.target.value === '' ? dflt : Math.min(hi, Math.max(lo, Math.round(Number(e.target.value)) || lo));
+        if (S().txMin > S().txMax) { if (id === 'txMin') S().txMax = S().txMin; else S().txMin = S().txMax; }
+        save(); renderAdv();
+      });
+    }
+    $('margin').addEventListener('change', (e) => { S().margin = e.target.value === '' ? '' : Math.min(95, Math.max(0, Number(e.target.value) || 0)); save(); renderAdv(); renderExpSum(); });
+    $('seed').addEventListener('input', (e) => { S().seed = e.target.value; save(); });
+    $('season').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-m]'); if (!b) return;
+      const cur = S().season[b.dataset.m], next = cur === undefined ? 'peak' : cur === 'peak' ? 'slow' : undefined;
+      if (next) S().season[b.dataset.m] = next; else delete S().season[b.dataset.m];
+      save(); renderAdv();
+    });
+    $('types').addEventListener('click', (e) => { const b = e.target.closest('[data-type]'); if (b) selectType(b.dataset.type); });
+  }
+
+  /* ---------- ให้ AI ปรับหมวด (แทนช่องแชต) ---------- */
+  let aiBusy = false;
+  async function askAi() {
+    if (aiBusy) return; // กดซ้ำระหว่างรอ ส่งคำขอเดียว
+    const text = S().type === OTHER ? (S().biz || '').trim() : typeLabel(S().type);
+    if (!text) { if (S().type) $('biz').focus(); return toast(S().type ? 'พิมพ์ประเภทธุรกิจของคุณก่อน' : 'เลือกประเภทธุรกิจก่อน'); }
+    const btn = $('btn-ai'), note = $('ai-note'); aiBusy = true; btn.disabled = true; btn.textContent = 'กำลังคิด…'; note.textContent = '';
+    let res;
+    try {
+      const r = await fetch('/api/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, today: isoLocal(new Date()) }) });
+      res = r.ok ? await r.json() : { note: r.status === 429 ? 'ขอบ่อยเกินไป รอสักครู่แล้วลองใหม่' : 'เซิร์ฟเวอร์ตอบไม่สำเร็จ' };
+    } catch (e) {
+      res = { note: 'ติดต่อเซิร์ฟเวอร์ไม่ได้' };
+    }
+    aiBusy = false; btn.disabled = false; btn.textContent = 'ให้ AI ปรับหมวด';
+    const plan = res.source === 'typhoon' ? sanitizePlan(res.plan) : null;
+    if (!plan) { note.textContent = (res.note ? res.note.replace(/ จึงใช้แม่แบบกลาง$/, '') : 'AI ใช้ไม่ได้ในตอนนี้') + ' · คงหมวดเดิมไว้'; return; }
+    if (!S().type) S().type = OTHER;
+    state.plan = plan; applyAiSettings(res.settings || {});
+    note.textContent = 'AI ปรับหมวดให้แล้ว · ตรวจและแก้ต่อได้';
+  }
+
+  function applyAiSettings(raw) {
+    const s = sanitizeSettings({ monthlyRevenueMin: raw.monthMin, monthlyRevenueMax: raw.monthMax, startDate: raw.startDate, endDate: raw.endDate }); // ตรวจซ้ำฝั่งเบราว์เซอร์ (NFR-SEC-020)
+    if (s.startDate && s.endDate) { S().start = s.startDate; S().end = s.endDate; S().monthlyRevenue = {}; }
+    if (s.monthMin) { S().monthMin = s.monthMin; S().monthMax = s.monthMax; S().mode = 'month'; S().monthlyRevenue = {}; }
+    save(); renderSettings(); renderPlan();
+  }
+
+  /** กด “สร้างรายการ” (quiet = true จากปุ่มสุ่มใหม่ ไม่ต้องแจ้งผลซ้ำ) */
+  function generateNow(quiet) {
+    if (!S().type || !state.plan) { switchTab('settings'); toast('เลือกประเภทธุรกิจก่อน'); return false; }
+    if (!validRange()) { switchTab('settings'); toast(`ตรวจช่วงวันที่ก่อน · ${rangeError()}`); return false; }
+    const plan = sanitizePlan(state.plan);
+    if (!plan) { toast('ต้องมีอย่างน้อย 1 หมวดรายรับและ 1 หมวดรายจ่าย ตั้งชื่อให้ครบ'); return false; }
+    state.plan = plan; renderPlan();
+    runGenerate();
+    if (quiet === true) return true;
+    const t = totals(state.rows, S().opening);
+    toast(t.count ? `สร้างให้ ${t.count} รายการ · ไม่พอใจกด “ย้อนกลับ” ได้` : 'ไม่ได้สร้างรายการ เพราะทุกวันเป็นวันหยุด หรือรายรับเป็น 0');
+    if (window.innerWidth <= 860) switchTab('ledger');
+    return true;
+  }
+
+  /* ---------- สร้างรายการ ---------- */
+  function runGenerate() {
+    state.prevRows = state.rows;
+    state.rows = generate({ ...S(), closedWeekdays: S().closedWeekdays, closedDates: S().closedDates }, state.plan || FALLBACK_PLAN)
+      .map((r) => ({ ...r, id: state.nextId++ }));
+    save(); renderTable();
+  }
+
+  /* ---------- ตาราง ---------- */
+  function renderTable() {
+    const body = $('rows'); body.textContent = '';
+    for (const r of state.rows) {
+      const tr = document.createElement('tr'); tr.dataset.id = r.id;
+      tr.innerHTML = '<td><input type="date" data-f="date" aria-label="วันที่"></td><td><input type="text" data-f="name" maxlength="60" aria-label="รายการ"></td>' +
+        '<td><input type="text" class="num" inputmode="decimal" data-f="income" aria-label="รายรับ"></td><td><input type="text" class="num" inputmode="decimal" data-f="expense" aria-label="รายจ่าย"></td>' +
+        '<td class="bal"></td><td class="x"><button class="del" type="button" aria-label="ลบรายการนี้">×</button></td>';
+      tr.querySelector('[data-f=date]').value = r.date; tr.querySelector('[data-f=name]').value = r.name;
+      tr.querySelector('[data-f=income]').value = r.income || ''; tr.querySelector('[data-f=expense]').value = r.expense || '';
+      body.append(tr);
+    }
+    $('empty').hidden = state.rows.length > 0;
+    $('tbl').hidden = state.rows.length === 0;
+    refreshBalances();
+  }
+  function refreshBalances() {
+    const bal = balances(state.rows, S().opening);
+    [...$('rows').children].forEach((tr, i) => { const c = tr.querySelector('.bal'); c.textContent = fmt(bal[i]); c.classList.toggle('neg', bal[i] < 0); });
+    const t = totals(state.rows, S().opening);
+    $('s-in').textContent = fmt(t.income); $('s-out').textContent = fmt(t.expense); $('s-bal').textContent = fmt(t.balance); $('s-n').textContent = t.count;
+    $('tab-count').textContent = t.count ? `(${t.count})` : '';
+    $('btn-undo').disabled = !state.prevRows; $('btn-export').disabled = !t.count; $('btn-regen').disabled = !state.rows.length;
+  }
+  const rowOf = (el) => state.rows.find((r) => r.id === Number(el.closest('tr').dataset.id));
+
+  function bindTable() {
+    $('rows').addEventListener('input', (e) => {
+      const f = e.target.dataset.f; if (f !== 'income' && f !== 'expense') return;
+      const raw = e.target.value.trim().replace(/,/g, ''), n = Number(raw);
+      if (raw !== '' && (!Number.isFinite(n) || n < 0)) return toast('จำนวนเงินต้องเป็นตัวเลขที่ไม่ติดลบ'); // ไม่รับ ค่ากลับเป็นเดิมเมื่อออกจากช่อง (BR-020)
+      const r = rowOf(e.target); r[f] = toMoney(raw);
+      if (r[f] > 0) { const other = f === 'income' ? 'expense' : 'income'; r[other] = 0; e.target.closest('tr').querySelector(`[data-f=${other}]`).value = ''; } // BR-010
+      save(); refreshBalances();
+    });
+    $('rows').addEventListener('change', (e) => {
+      const f = e.target.dataset.f; if (!f) return; const r = rowOf(e.target);
+      if (f === 'name') r.name = e.target.value.trim(); else if (f === 'date') { if (!e.target.value) { e.target.value = r.date; return toast('วันที่ไม่ถูกต้อง กรอกวันที่ให้ครบ'); } r.date = e.target.value; state.rows = sortRows(state.rows); } else e.target.value = r[f] || '';
+      save(); if (f === 'date') renderTable();
+    });
+    $('rows').addEventListener('click', (e) => { if (!e.target.closest('.del')) return; const r = rowOf(e.target); state.rows = state.rows.filter((x) => x !== r); save(); renderTable(); });
+    $('btn-add').addEventListener('click', () => {
+      const date = state.rows.length ? state.rows[state.rows.length - 1].date : S().start;
+      state.rows = sortRows([...state.rows, { id: state.nextId++, date, name: 'รายการใหม่', income: 0, expense: 0 }]); save(); renderTable();
+      const last = [...$('rows').querySelectorAll('[data-f=name]')].pop(); last.focus(); last.select();
+    });
+    $('btn-regen').addEventListener('click', () => { if (generateNow(true)) toast(S().seed !== '' ? 'ล็อกผลสุ่มอยู่ ผลจึงเหมือนเดิม · ล้างช่อง “ล็อกผลสุ่ม” เพื่อสุ่มใหม่' : 'สุ่มรายการใหม่แล้ว'); });
+    $('btn-undo').addEventListener('click', () => { if (!state.prevRows) return; state.rows = state.prevRows; state.prevRows = null; save(); renderTable(); toast('ย้อนกลับแล้ว'); });
+  }
+
+  /* ---------- ส่งออก Excel ---------- */
+  function exportXlsx() {
+    if (typeof XLSX === 'undefined') return toast('โหลดตัวส่งออก Excel ไม่ได้ ตรวจอินเทอร์เน็ตแล้วลองใหม่');
+    const rows = state.rows, op = S().opening || 0, bal = balances(rows, op);
+    const serial = (iso) => { const [y, m, d] = iso.split('-').map(Number); return (Date.UTC(y, m - 1, d) - Date.UTC(1899, 11, 30)) / 864e5; };
+    const ws = {}; const put = (a, c) => { ws[a] = c; };
+    ['วันที่', 'รายการ', 'รายรับ', 'รายจ่าย', 'คงเหลือ'].forEach((h, i) => put('ABCDE'[i] + '1', { t: 's', v: h }));
+    let r = 2;
+    if (op) { put('A' + r, { t: 's', v: '' }); put('B' + r, { t: 's', v: 'ยอดยกมา' }); put('E' + r, { t: 'n', v: op, z: '#,##0.00' }); r++; }
+    const firstData = r;
+    rows.forEach((row, i) => {
+      put('A' + r, { t: 'n', v: serial(row.date), z: 'dd/mm/yyyy' }); put('B' + r, { t: 's', v: row.name });
+      if (row.income) put('C' + r, { t: 'n', v: row.income, z: '#,##0.00' }); if (row.expense) put('D' + r, { t: 'n', v: row.expense, z: '#,##0.00' });
+      const prev = r === 2 ? '0' : 'E' + (r - 1);
+      put('E' + r, { t: 'n', v: bal[i], f: `${prev}+C${r}-D${r}`, z: '#,##0.00' }); r++;
+    });
+    const last = r - 1, t = totals(rows, op);
+    put('B' + r, { t: 's', v: 'รวม' });
+    put('C' + r, { t: 'n', v: t.income, f: `SUM(C${firstData}:C${last})`, z: '#,##0.00' });
+    put('D' + r, { t: 'n', v: t.expense, f: `SUM(D${firstData}:D${last})`, z: '#,##0.00' });
+    put('E' + r, { t: 'n', v: t.balance, f: `E${last}`, z: '#,##0.00' });
+    ws['!ref'] = `A1:E${r}`; ws['!cols'] = [{ wch: 12 }, { wch: 34 }, { wch: 14 }, { wch: 14 }, { wch: 16 }];
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'รายรับรายจ่าย');
+    XLSX.writeFile(wb, `income-expense-${rows[0].date}_${rows[rows.length - 1].date}.xlsx`);
+    toast('ส่งออกไฟล์แล้ว');
+  }
+
+  /* ---------- อื่น ๆ ---------- */
+  let toastTimer;
+  function toast(msg) { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.hidden = true), 2800); }
+  const openSettings = () => switchTab('settings');
+  function switchTab(v) {
+    document.querySelector('.app').dataset.view = v;
+    document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.tab === v));
+  }
+  function setTheme(t) { document.documentElement.dataset.theme = t; $('btn-theme').textContent = t === 'dark' ? 'โหมดสว่าง' : 'โหมดมืด'; try { localStorage.setItem('iegen.theme', t); } catch (e) { /* ข้าม */ } }
+
+  function init() {
+    let theme = 'light'; try { theme = localStorage.getItem('iegen.theme') || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light'); } catch (e) { /* ข้าม */ }
+    setTheme(theme);
+    $('btn-theme').addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
+    document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+    $('btn-gen').addEventListener('click', generateNow); $('btn-ai').addEventListener('click', askAi);
+    $('btn-export').addEventListener('click', exportXlsx);
+    let armed = 0;
+    $('btn-clear').addEventListener('click', (e) => {
+      if (!armed) { armed = setTimeout(() => { armed = 0; e.target.textContent = 'ล้างทั้งหมด'; e.target.classList.remove('danger'); }, 4000); e.target.textContent = 'กดอีกครั้งเพื่อยืนยัน'; e.target.classList.add('danger'); return; }
+      clearTimeout(armed); armed = 0; e.target.textContent = 'ล้างทั้งหมด'; e.target.classList.remove('danger');
+      state = defaults(); save(); renderSettings(); renderPlan(); renderTable(); toast('ล้างข้อมูลแล้ว');
+    });
+    bindSettings(); bindPlan(); bindAdv(); bindTable(); renderSettings(); renderPlan(); renderTable(); switchTab(state.rows.length ? 'ledger' : 'settings');
+  }
+  init();
+})();
+
+
+(function(){const $=(i)=>document.getElementById(i);
+const pick=()=>{if(!document.querySelector('[data-type=coffee][aria-pressed=true]'))document.querySelector('[data-type=coffee]').click();};
+$('mb-empty').onclick=()=>{try{localStorage.removeItem('iegen.v1')}catch(e){}location.reload();};
+$('mb-gen').onclick=()=>{pick();$('btn-gen').click();};
+$('mb-ai').onclick=()=>{window.__mockAi='up';pick();$('btn-ai').click();};
+$('mb-down').onclick=()=>{window.__mockAi='down';pick();$('btn-ai').click();};})();
+</script>
+</body>
+</html>
