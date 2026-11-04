@@ -1,0 +1,8 @@
+# ของลับและของที่สร้างใหม่ได้
+.env
+node_modules/
+# ของชั่วคราว (temp-file-discipline)
+_to_delete/
+.playwright-mcp/
+.claude/
+*.log
