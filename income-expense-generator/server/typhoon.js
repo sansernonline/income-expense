@@ -48,6 +48,14 @@ async function callOnce(cfg, userText, today) {
   }
 }
 
+/** BR-060: รายจ่ายรวมต้องไม่เกิน 90% ของรายรับ (AI มักตอบรวม 100%) ถ้าเกินให้ย่อทุกหมวดตามสัดส่วนเหลือ 85% */
+function capExpenses(plan) {
+  const sum = plan.expenses.reduce((a, e) => a + e.pct, 0);
+  if (sum <= 90) return plan;
+  const k = 85 / sum;
+  return { ...plan, expenses: plan.expenses.map((e) => ({ ...e, pct: Math.round(e.pct * k * 10) / 10 })) };
+}
+
 /** คืน { plan, settings, source, note } เสมอ — ล้มเหลวแล้วใช้แม่แบบกลาง */
 async function requestPlan(cfg, userText, today) {
   const fallback = (note) => ({ plan: FALLBACK_PLAN, settings: {}, source: 'fallback', note });
@@ -56,7 +64,7 @@ async function requestPlan(cfg, userText, today) {
     for (let attempt = 0; attempt < 2; attempt++) {
       const raw = await callOnce(cfg, userText, today);
       const plan = sanitizePlan(raw);
-      if (plan) return { plan, settings: sanitizeSettings(raw.settings), source: 'typhoon', note: '' };
+      if (plan) return { plan: capExpenses(plan), settings: /\d/.test(userText) ? sanitizeSettings(raw.settings) : {}, source: 'typhoon', note: '' };
     }
     return fallback('Typhoon ตอบรูปแบบที่ใช้ไม่ได้ จึงใช้แม่แบบกลาง');
   } catch (err) {

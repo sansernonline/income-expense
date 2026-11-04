@@ -22,7 +22,7 @@ test('FR-BIZ-040: ไม่มีคีย์ → ไม่เรียก Typho
 
 test('FR-BIZ-030: สำเร็จ → source=typhoon · แผนผ่าน sanitize · settings ผ่าน sanitizeSettings', async () => {
   stub(() => reply(planA));
-  const r = await requestPlan(cfg, 'ร้านกาแฟ', '2026-11-04');
+  const r = await requestPlan(cfg, 'ร้านกาแฟ รายรับเดือนละ 50,000-60,000', '2026-11-04');
   assert.equal(r.source, 'typhoon');
   assert.equal(r.plan.revenue[0].name, 'หมวดของ AI');
   assert.deepEqual(r.settings, { monthMin: 50000, monthMax: 60000 });
@@ -103,4 +103,22 @@ test('NFR-PERF-020: ตอบที่ 39 วินาที ยังใช้�
   t.mock.timers.tick(39000);
   release();
   assert.equal((await p).source, 'typhoon');
+});
+
+test('FR-BIZ-050: ผู้ใช้ไม่ได้ระบุตัวเลข → ทิ้งช่วงรายรับที่ AI คิดเอง (ไม่ทับค่าตั้งต้นของประเภท)', async () => {
+  stub(() => reply(planA));
+  const r = await requestPlan(cfg, 'ร้านกาแฟ', '2026-11-04');
+  assert.equal(r.source, 'typhoon');
+  assert.deepEqual(r.settings, {});
+});
+
+test('BR-060: AI ตอบรายจ่ายรวมเกิน 90% → ย่อสัดส่วนเหลือ 85% · ไม่เกินไม่แตะ', async () => {
+  const big = { ...planA, expenses: [{ name: 'a', pct: 60, freq: 'weekly' }, { name: 'b', pct: 40, freq: 'monthly', day: 1 }] }; // รวม 100
+  stub(() => reply(big));
+  const r = await requestPlan(cfg, 'ร้านกาแฟ', '2026-11-04');
+  const sum = r.plan.expenses.reduce((a, e) => a + e.pct, 0);
+  assert.ok(Math.abs(sum - 85) < 0.5, String(sum));
+  assert.deepEqual(r.plan.expenses.map((e) => e.pct), [51, 34]);
+  stub(() => reply(planA)); // 40% เดิม
+  assert.equal((await requestPlan(cfg, 'ร้านกาแฟ', '2026-11-04')).plan.expenses[0].pct, 40);
 });
