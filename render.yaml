@@ -1,0 +1,29 @@
+# Render Blueprint · Income & Expense (IEGEN)
+# วิธีใช้: push โปรเจกต์ขึ้น GitHub/GitLab → Render Dashboard → New → Blueprint → เลือก repo นี้
+# ระบบจะถามค่า TYPHOON_API_KEY ตอนสร้างครั้งแรก (ไม่ใส่ก็ได้ แอปใช้ได้ปกติ แค่ปุ่ม "ให้ AI ปรับหมวด" จะคงหมวดเดิมและแจ้งเหตุผล)
+services:
+  - type: web
+    name: income-expense
+    runtime: node
+    region: singapore          # ใกล้ผู้ใช้ในไทย (เปลี่ยนภายหลังไม่ได้)
+    plan: free                 # หลับเมื่อไม่มีคนใช้ 15 นาที ตื่นช้าราว 1 นาที · ต้องการให้ตื่นตลอดเปลี่ยนเป็น starter
+    rootDir: income-expense-generator
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: HOST              # บน Render ต้องรับที่ 0.0.0.0 (เครื่องตัวเองค่าตั้งต้นคือ 127.0.0.1)
+        value: 0.0.0.0
+      - key: TRUST_PROXY       # ใช้ X-Forwarded-For ของ Render นับโควตาต่อ IP
+        value: "1"
+      - key: RATE_LIMIT_PER_MIN
+        value: "10"
+      - key: TYPHOON_MODEL
+        value: typhoon-v2.5-30b-a3b-instruct
+      - key: TYPHOON_BASE_URL
+        value: https://api.opentyphoon.ai/v1
+      - key: TYPHOON_API_KEY   # ความลับ: ใส่ใน Dashboard ไม่เขียนในไฟล์นี้
+        sync: false
