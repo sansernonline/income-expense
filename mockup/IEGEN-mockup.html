@@ -163,6 +163,20 @@ td:nth-child(1){width:140px}td:nth-child(3),td:nth-child(4){width:112px}td:nth-c
 }
 @media (prefers-reduced-motion:no-preference){.btn,.chip,.del{transition:background .12s ease-out,border-color .12s ease-out}}
 
+/* หน้าต่างประวัติ */
+.hist{margin:auto;width:min(560px,calc(100vw - 32px));max-height:min(640px,calc(100vh - 32px));padding:var(--s5);border:1px solid var(--line);border-radius:var(--r-panel);background:var(--surface);color:var(--text);box-shadow:var(--panel-sh)}
+.hist::backdrop{background:rgba(16,16,24,.45)}
+.hist>div{display:flex;flex-direction:column;gap:var(--s3)}
+.hist-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s3)}
+.hist-head h2{font:600 var(--fs-md)/1.4 var(--font-h)}
+.hist .addrow input{flex:1;max-width:none;min-width:0}
+.hist .err:empty{display:none}
+.hist-list{list-style:none;display:flex;flex-direction:column;gap:var(--s2);padding:0;margin:0}
+.hist-list li{display:flex;align-items:center;gap:var(--s2);padding:var(--s2) var(--s3);border:1px solid var(--line);border-radius:var(--r-ctl);background:var(--surface-2)}
+.hist-list li>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.hist-list b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist-list .btn.small{align-self:center}
+
 .mockbar{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 16px;background:#131318;color:#F2F2F5;font-size:12px;z-index:9}
 .mockbar b{letter-spacing:.08em;color:#FB7185}.mockbar button{height:28px;padding:0 12px;border-radius:999px;border:1px solid #55555F;color:#F2F2F5}
 .mockbar button:hover{background:#26262E}.mockbar span{color:#A9A9B6;margin-left:auto}
@@ -191,6 +205,7 @@ body{padding-bottom:48px}@media print{.mockbar{display:none}}
       <button class="btn" id="btn-undo" type="button">ย้อนกลับ</button>
       <button class="btn" id="btn-add" type="button">เพิ่มรายการ</button>
       <span class="grow"></span>
+      <button class="btn" id="btn-hist" type="button">ประวัติ</button>
       <button class="btn" id="btn-export" type="button">ส่งออก Excel</button>
     </div>
 
@@ -290,6 +305,22 @@ body{padding-bottom:48px}@media print{.mockbar{display:none}}
     </div>
   </aside>
 </main>
+
+<dialog class="hist" id="hist" aria-labelledby="hist-h">
+  <form method="dialog" class="hist-head"><h2 id="hist-h">ประวัติที่บันทึก</h2><button class="btn ghost" value="close">ปิด</button></form>
+  <div id="hist-login" hidden>
+    <label class="field">รหัสผ่านของแอป<input id="hist-pass" type="password" autocomplete="current-password"></label>
+    <p class="err" id="hist-login-err" role="alert"></p>
+    <button class="btn primary" id="hist-login-btn" type="button">เข้าใช้</button>
+  </div>
+  <div id="hist-main" hidden>
+    <div class="addrow"><input id="hist-name" type="text" maxlength="100" aria-label="ชื่อชุดที่จะบันทึก"><button class="btn primary" id="hist-save" type="button">บันทึกชุดนี้</button></div>
+    <p class="lbl sm" id="hist-note" role="status"></p>
+    <p class="lbl sm" id="hist-empty" hidden>ยังไม่มีชุดที่บันทึกไว้</p>
+    <ul class="hist-list" id="hist-list"></ul>
+    <button class="btn ghost small" id="hist-logout" type="button">ออกจากระบบในเครื่องนี้</button>
+  </div>
+</dialog>
 
 
 <div class="mockbar" role="toolbar" aria-label="ตัวควบคุมของ mockup">
@@ -666,12 +697,109 @@ body{padding-bottom:48px}@media print{.mockbar{display:none}}
 });
 
 </script>
+<script>
+/* หน้าต่าง "ประวัติ": บันทึกชุดปัจจุบันลงฐานข้อมูลบนเซิร์ฟเวอร์ · เปิดชุดเก่า · ลบ (เรียก /api/ledgers) */
+(function () {
+  const PASS_KEY = 'iegen.pass';
+  const $ = (id) => document.getElementById(id);
+  const getPass = () => { try { return localStorage.getItem(PASS_KEY) || ''; } catch (e) { return ''; } };
+  const setPass = (v) => { try { v ? localStorage.setItem(PASS_KEY, v) : localStorage.removeItem(PASS_KEY); } catch (e) { /* โหมดส่วนตัว */ } };
+  const BACKUP = { ok: 'สำรองไป Backblaze แล้ว', failed: 'แต่สำรองไป Backblaze ไม่สำเร็จ (ข้อมูลยังอยู่บนเซิร์ฟเวอร์ จะสำรองอีกครั้งตอนบันทึกครั้งถัดไป)', off: 'ยังไม่ได้ตั้งการสำรองไป Backblaze' };
+
+  /** app: { getState, setState, defaultName, toast, fmtDate } */
+  function init(app) {
+    const dlg = $('hist');
+
+    async function call(path, opts = {}) {
+      const r = await fetch('/api/ledgers' + path, { ...opts, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getPass() } });
+      const body = await r.json().catch(() => ({}));
+      if (r.status === 401) { setPass(''); showLogin(body.error); }
+      if (!r.ok) throw Object.assign(new Error(body.error || 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'), { status: r.status });
+      return body;
+    }
+    const note = (msg) => { $('hist-note').textContent = msg || ''; };
+
+    function showLogin(msg) {
+      $('hist-login').hidden = false; $('hist-main').hidden = true;
+      $('hist-login-err').textContent = msg || '';
+      $('hist-pass').focus();
+    }
+
+    async function refresh() {
+      if (!getPass()) return showLogin();
+      $('hist-login').hidden = true; $('hist-main').hidden = false;
+      try { const { items } = await call(''); render(items); } catch (e) { if (e.status !== 401) note(e.message); }
+    }
+
+    function render(items) {
+      const ul = $('hist-list'); ul.textContent = '';
+      $('hist-empty').hidden = items.length > 0;
+      for (const it of items) {
+        const li = document.createElement('li');
+        const info = document.createElement('div');
+        const b = document.createElement('b'); b.textContent = it.name;
+        const meta = document.createElement('span'); meta.className = 'lbl sm';
+        const saved = new Date(it.savedAt).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+        meta.textContent = `${it.start ? app.fmtDate(it.start) + ' – ' + app.fmtDate(it.end) + ' · ' : ''}${it.rowCount} รายการ · บันทึก ${saved}`;
+        info.append(b, meta);
+        const open = button('เปิด', () => openItem(it.id));
+        const del = button('ลบ', () => removeItem(it, del));
+        li.append(info, open, del); ul.append(li);
+      }
+    }
+    function button(text, onClick) { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small'; b.textContent = text; b.addEventListener('click', onClick); return b; }
+
+    async function openItem(id) {
+      try { const it = await call('/' + id); app.setState(it.data); dlg.close(); app.toast(`เปิด “${it.name}” แล้ว`); } catch (e) { if (e.status !== 401) note(e.message); }
+    }
+
+    let armed = null; // กดลบ 2 ครั้งเพื่อยืนยัน เหมือนปุ่ม "ล้างทั้งหมด"
+    async function removeItem(it, btn) {
+      if (armed !== btn) { armed = btn; btn.textContent = 'กดอีกครั้งเพื่อลบ'; btn.classList.add('danger'); return; }
+      armed = null;
+      try { const r = await call('/' + it.id, { method: 'DELETE' }); note(`ลบ “${it.name}” แล้ว · ${BACKUP[r.backup]}`); refresh(); } catch (e) { if (e.status !== 401) note(e.message); }
+    }
+
+    async function save() {
+      const name = $('hist-name').value.trim() || app.defaultName();
+      const { settings, rows, plan, nextId } = app.getState();
+      if (!rows.length) return note('ยังไม่มีรายการในตาราง สร้างหรือเพิ่มรายการก่อนบันทึก');
+      $('hist-save').disabled = true;
+      try { const r = await call('', { method: 'POST', body: JSON.stringify({ name, data: { settings, rows, plan, nextId } }) }); $('hist-name').value = ''; note(`บันทึก “${name}” แล้ว · ${BACKUP[r.backup]}`); refresh(); } catch (e) { if (e.status !== 401) note(e.message); } finally { $('hist-save').disabled = false; }
+    }
+
+    $('btn-hist').addEventListener('click', () => { note(''); $('hist-name').placeholder = app.defaultName(); dlg.showModal(); refresh(); });
+    $('hist-save').addEventListener('click', save);
+    $('hist-login-btn').addEventListener('click', () => { setPass($('hist-pass').value); refresh().then(() => { if (getPass()) $('hist-pass').value = ''; }); });
+    $('hist-pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('hist-login-btn').click(); });
+    $('hist-logout').addEventListener('click', () => { setPass(''); $('hist-pass').value = ''; showLogin(); });
+  }
+
+  window.IE = Object.assign(window.IE || {}, { history: { init } });
+})();
+
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 
 /* mockup: ตัวแทน Typhoon ที่ตอบเร็วและตอบแบบเดียวทุกครั้ง */
 window.__mockAi = 'up';
-window.fetch = async () => {
+/* mockup: ตัวแทน /api/ledgers เก็บในหน่วยความจำ รหัสอะไรก็เข้าได้ */
+const mockLedgers = [];
+const ledgerApi = (url, opts = {}) => {
+  const id = Number(url.split('/')[3]);
+  const reply = (body) => ({ ok: true, status: 200, json: async () => body });
+  if (opts.method === 'POST') {
+    const { name, data } = JSON.parse(opts.body);
+    mockLedgers.unshift({ id: Date.now(), name, data, savedAt: new Date().toISOString(), start: data.settings.start, end: data.settings.end, rowCount: data.rows.length });
+    return reply({ backup: 'off' });
+  }
+  if (opts.method === 'DELETE') { mockLedgers.splice(mockLedgers.findIndex((l) => l.id === id), 1); return reply({ backup: 'off' }); }
+  if (id) return reply(mockLedgers.find((l) => l.id === id));
+  return reply({ items: mockLedgers.map(({ data, ...meta }) => meta) });
+};
+window.fetch = async (url, opts) => {
+  if (String(url).startsWith('/api/ledgers')) return ledgerApi(String(url), opts);
   await new Promise((r) => setTimeout(r, 700));
   if (window.__mockAi === 'down') throw new Error('mock: AI down');
   return { ok: true, json: async () => ({ source: 'typhoon', note: '', settings: { monthlyRevenueMin: 100000, monthlyRevenueMax: 140000 }, plan: {
@@ -702,13 +830,15 @@ window.fetch = async () => {
     return { settings: { type: '', biz: '', start, end, opening: 0, mode: 'month', monthMin: 80000, monthMax: 100000, dayMin: 2000, dayMax: 5000, monthlyRevenue: {}, closedWeekdays: [0], closedDates: [], margin: '', weekendPct: 30, jitterPct: 25, season: {}, seasonPct: 25, txMin: 1, txMax: 2, seed: '' }, rows: [], plan: null, prevRows: null, nextId: 1 };
   }
   let state = load();
+  /** เติมค่าที่ขาดให้ข้อมูลที่เก็บไว้ (localStorage หรือชุดจากประวัติ) · รูปไม่ถูกคืน null */
+  function normalize(s) {
+    if (!(s && s.settings && Array.isArray(s.rows))) return null;
+    const d = defaults(); const st = s.settings; delete s.chat;
+    if (st.defaultRevenue && st.monthMin === undefined) st.monthMin = st.monthMax = st.defaultRevenue; // ข้อมูลรุ่นเก่า
+    return Object.assign(d, s, { settings: Object.assign(d.settings, st) });
+  }
   function load() {
-    try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.settings && Array.isArray(s.rows)) {
-        const d = defaults(); const st = s.settings; delete s.chat;
-        if (st.defaultRevenue && st.monthMin === undefined) st.monthMin = st.monthMax = st.defaultRevenue; // ข้อมูลรุ่นเก่า
-        return Object.assign(d, s, { settings: Object.assign(d.settings, st) });
-      } } catch (e) { /* ใช้ค่าตั้งต้น */ }
-    return defaults();
+    try { return normalize(JSON.parse(localStorage.getItem(KEY))) || defaults(); } catch (e) { return defaults(); }
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* โหมดส่วนตัว: ไม่เก็บ */ } }
 
@@ -1074,6 +1204,11 @@ window.fetch = async () => {
       if (!armed) { armed = setTimeout(() => { armed = 0; e.target.textContent = 'ล้างทั้งหมด'; e.target.classList.remove('danger'); }, 4000); e.target.textContent = 'กดอีกครั้งเพื่อยืนยัน'; e.target.classList.add('danger'); return; }
       clearTimeout(armed); armed = 0; e.target.textContent = 'ล้างทั้งหมด'; e.target.classList.remove('danger');
       state = defaults(); save(); renderSettings(); renderPlan(); renderTable(); toast('ล้างข้อมูลแล้ว');
+    });
+    window.IE.history.init({
+      getState: () => state, toast, fmtDate: thDate,
+      defaultName: () => `รายการ ${thDate(S().start)} – ${thDate(S().end)}`,
+      setState: (s) => { state = normalize(s) || state; state.prevRows = null; save(); renderSettings(); renderPlan(); renderTable(); switchTab('ledger'); },
     });
     bindSettings(); bindPlan(); bindAdv(); bindTable(); renderSettings(); renderPlan(); renderTable(); switchTab(state.rows.length ? 'ledger' : 'settings');
   }

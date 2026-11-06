@@ -8,7 +8,22 @@ const read = (f) => fs.readFileSync(path.join(pub, f), 'utf8');
 const stub = `
 /* mockup: ตัวแทน Typhoon ที่ตอบเร็วและตอบแบบเดียวทุกครั้ง */
 window.__mockAi = 'up';
-window.fetch = async () => {
+/* mockup: ตัวแทน /api/ledgers เก็บในหน่วยความจำ รหัสอะไรก็เข้าได้ */
+const mockLedgers = [];
+const ledgerApi = (url, opts = {}) => {
+  const id = Number(url.split('/')[3]);
+  const reply = (body) => ({ ok: true, status: 200, json: async () => body });
+  if (opts.method === 'POST') {
+    const { name, data } = JSON.parse(opts.body);
+    mockLedgers.unshift({ id: Date.now(), name, data, savedAt: new Date().toISOString(), start: data.settings.start, end: data.settings.end, rowCount: data.rows.length });
+    return reply({ backup: 'off' });
+  }
+  if (opts.method === 'DELETE') { mockLedgers.splice(mockLedgers.findIndex((l) => l.id === id), 1); return reply({ backup: 'off' }); }
+  if (id) return reply(mockLedgers.find((l) => l.id === id));
+  return reply({ items: mockLedgers.map(({ data, ...meta }) => meta) });
+};
+window.fetch = async (url, opts) => {
+  if (String(url).startsWith('/api/ledgers')) return ledgerApi(String(url), opts);
   await new Promise((r) => setTimeout(r, 700));
   if (window.__mockAi === 'down') throw new Error('mock: AI down');
   return { ok: true, json: async () => ({ source: 'typhoon', note: '', settings: { monthlyRevenueMin: 100000, monthlyRevenueMax: 140000 }, plan: {
@@ -50,6 +65,7 @@ let html = read('index.html')
 ${read('presets.js')}
 </script>`)
   .replace('<script src="ledger.js"></script>', `<script>\n${read('ledger.js')}\n</script>`)
+  .replace('<script src="history.js"></script>', `<script>\n${read('history.js')}\n</script>`)
   .replace('<script src="app.js"></script>', `<script>\n${stub}\n${read('app.js')}\n${barJs}\n</script>`)
   .replace('<div class="toast"', `${bar}\n<div class="toast"`);
 
