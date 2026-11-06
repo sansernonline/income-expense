@@ -19,7 +19,7 @@ node --test public/ledger.test.js
 | ที่ | หน้าที่ |
 |---|---|
 | `server/server.js` | เสิร์ฟหน้าเว็บ + `POST /api/plan` (ผูก 127.0.0.1 · จำกัด 10 KB) |
-| `server/history.js` | `/api/ledgers` บันทึก เปิด ลบ ชุดรายรับรายจ่าย · ตรวจรหัส `APP_PASSWORD` · ใส่ผิด 10 ครั้งใน 15 นาทีล็อก IP นั้น |
+| `server/history.js` | `/api/ledgers` บันทึก เปิด ลบ ชุดรายรับรายจ่าย · ตรวจรหัส `APP_PASSWORD` · ใส่ผิด 10 ครั้งใน 15 นาทีล็อก IP นั้น · ผิดรวมทุก IP 50 ครั้งล็อกทั้งหมด 15 นาที |
 | `server/store.js` | ฐานข้อมูล SQLite (`node:sqlite` มากับ Node 22) ตาราง `ledgers` |
 | `server/b2.js` | ส่งและดึงไฟล์ SQLite กับ Backblaze B2 ผ่าน S3 API (ลายเซ็น v4 เขียนเอง) |
 | `public/history.js` | หน้าต่าง "ประวัติ" |

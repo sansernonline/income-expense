@@ -117,3 +117,11 @@ test('ไม่ตั้ง APP_PASSWORD → 503 · รหัสผิด 10 ค
   assert.deepEqual([other.status, other.body.backup], [200, 'off']);
   await h.close();
 });
+
+test('เปลี่ยน IP หนีการล็อกไม่ได้: รหัสผิดรวมทุก IP 50 ครั้งใน 15 นาที → 429 ทุก IP', async () => {
+  const url = new URL('http://x/api/ledgers');
+  const h = createHistory({ dataDir: tmp('global'), password: PASS, b2cfg: null });
+  for (let i = 0; i < 50; i++) assert.equal((await h.handle({ method: 'GET', headers: { authorization: 'Bearer nope' } }, url, `10.0.0.${i}`)).status, 401);
+  assert.equal((await h.handle({ method: 'GET', headers: { authorization: 'Bearer ' + PASS } }, url, '9.9.9.9')).status, 429);
+  await h.close();
+});

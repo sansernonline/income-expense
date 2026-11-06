@@ -9,6 +9,8 @@ const MAX_BODY = 2 * 1024 * 1024; // 366 วัน วันละหลาย�
 const MAX_ROWS = 20000;
 const FAIL_MAX = 10; // รหัสผิดได้กี่ครั้งต่อ IP ใน 15 นาที
 const FAIL_WINDOW = 15 * 60 * 1000;
+// เพดานรวมทุก IP: IP มาจาก X-Forwarded-For ซึ่งผู้ส่งปลอมได้ เปลี่ยน IP ไปเรื่อย ๆ ก็ยังเดารหัสได้ไม่เกินนี้ (แลกกับเจ้าของอาจถูกล็อกด้วย 15 นาที)
+const FAIL_MAX_ALL = 50;
 
 const digest = (s) => crypto.createHash('sha256').update(String(s)).digest();
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -37,11 +39,14 @@ function createHistory({ dataDir, password, b2cfg, log = console.error }) {
 
   function checkAuth(req, ip, now = Date.now()) {
     if (!want) return { status: 503, body: { error: 'ยังไม่ได้เปิดใช้ประวัติ ตั้ง APP_PASSWORD ที่เซิร์ฟเวอร์ก่อน' } };
-    const recent = (fails.get(ip) || []).filter((t) => now - t < FAIL_WINDOW);
-    if (recent.length >= FAIL_MAX) return { status: 429, body: { error: 'ใส่รหัสผิดหลายครั้ง รอ 15 นาทีแล้วลองใหม่' } };
+    for (const [k, v] of fails) if (now - v[v.length - 1] >= FAIL_WINDOW) fails.delete(k); // ไม่ให้ Map โตไม่หยุด
+    const recent = fails.get(ip) || [];
+    let total = 0;
+    for (const v of fails.values()) total += v.filter((t) => now - t < FAIL_WINDOW).length;
+    if (recent.filter((t) => now - t < FAIL_WINDOW).length >= FAIL_MAX || total >= FAIL_MAX_ALL) return { status: 429, body: { error: 'ใส่รหัสผิดหลายครั้ง รอ 15 นาทีแล้วลองใหม่' } };
     const m = String(req.headers.authorization || '').match(/^Bearer (.+)$/);
     if (m && crypto.timingSafeEqual(digest(m[1]), want)) return null;
-    recent.push(now); fails.set(ip, recent);
+    fails.set(ip, [...recent.filter((t) => now - t < FAIL_WINDOW), now]);
     return { status: 401, body: { error: 'รหัสผ่านไม่ถูกต้อง' } };
   }
 
