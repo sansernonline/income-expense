@@ -331,10 +331,13 @@ test('FR_BIZ_030 · FR_BIZ_060 · TC-BIZ-024/025: "อื่น ๆ" ช่อ�
 });
 
 test('FR_BIZ_030 · TC-BIZ-026: กดปุ่ม AI ซ้ำ 3 ครั้งระหว่างรอ → ส่งคำขอเดียว', o, async () => {
-  const page = await open({ ai: async (route) => { await new Promise((r) => setTimeout(r, 600)); await K.aiOk(okPlan)(route); } });
+  // ตอบหลังกดครบ 3 ครั้ง ไม่ใช้เวลาตายตัว (เครื่องช้าตอนรันทั้งชุด คำขอแรกจะจบก่อนกดครั้งที่ 3)
+  let release; const clicked = new Promise((r) => { release = r; });
+  const page = await open({ ai: async (route) => { await clicked; await K.aiOk(okPlan)(route); } });
   await chip(page, 'coffee').click();
   const b = page.locator('#btn-ai');
   await b.click(); await b.click({ force: true, timeout: 500 }).catch(() => {}); await b.dispatchEvent('click');
+  release();
   await page.waitForFunction(() => !document.getElementById('btn-ai').disabled);
   assert.equal(page.aiCalls.length, 1);
   await K.closeAll(page);

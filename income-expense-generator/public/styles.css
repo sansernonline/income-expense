@@ -151,3 +151,17 @@ td:nth-child(1){width:140px}td:nth-child(3),td:nth-child(4){width:112px}td:nth-c
   .prow input,.prow select,.prow .rm{min-height:44px}
 }
 @media (prefers-reduced-motion:no-preference){.btn,.chip,.del{transition:background .12s ease-out,border-color .12s ease-out}}
+
+/* หน้าต่างประวัติ */
+.hist{margin:auto;width:min(560px,calc(100vw - 32px));max-height:min(640px,calc(100vh - 32px));padding:var(--s5);border:1px solid var(--line);border-radius:var(--r-panel);background:var(--surface);color:var(--text);box-shadow:var(--panel-sh)}
+.hist::backdrop{background:rgba(16,16,24,.45)}
+.hist>div{display:flex;flex-direction:column;gap:var(--s3)}
+.hist-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s3)}
+.hist-head h2{font:600 var(--fs-md)/1.4 var(--font-h)}
+.hist .addrow input{flex:1;max-width:none;min-width:0}
+.hist .err:empty{display:none}
+.hist-list{list-style:none;display:flex;flex-direction:column;gap:var(--s2);padding:0;margin:0}
+.hist-list li{display:flex;align-items:center;gap:var(--s2);padding:var(--s2) var(--s3);border:1px solid var(--line);border-radius:var(--r-ctl);background:var(--surface-2)}
+.hist-list li>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.hist-list b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist-list .btn.small{align-self:center}

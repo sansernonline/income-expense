@@ -32,6 +32,7 @@
       <button class="btn" id="btn-undo" type="button">ย้อนกลับ</button>
       <button class="btn" id="btn-add" type="button">เพิ่มรายการ</button>
       <span class="grow"></span>
+      <button class="btn" id="btn-hist" type="button">ประวัติ</button>
       <button class="btn" id="btn-export" type="button">ส่งออก Excel</button>
     </div>
 
@@ -132,11 +133,28 @@
   </aside>
 </main>
 
+<dialog class="hist" id="hist" aria-labelledby="hist-h">
+  <form method="dialog" class="hist-head"><h2 id="hist-h">ประวัติที่บันทึก</h2><button class="btn ghost" value="close">ปิด</button></form>
+  <div id="hist-login" hidden>
+    <label class="field">รหัสผ่านของแอป<input id="hist-pass" type="password" autocomplete="current-password"></label>
+    <p class="err" id="hist-login-err" role="alert"></p>
+    <button class="btn primary" id="hist-login-btn" type="button">เข้าใช้</button>
+  </div>
+  <div id="hist-main" hidden>
+    <div class="addrow"><input id="hist-name" type="text" maxlength="100" aria-label="ชื่อชุดที่จะบันทึก"><button class="btn primary" id="hist-save" type="button">บันทึกชุดนี้</button></div>
+    <p class="lbl sm" id="hist-note" role="status"></p>
+    <p class="lbl sm" id="hist-empty" hidden>ยังไม่มีชุดที่บันทึกไว้</p>
+    <ul class="hist-list" id="hist-list"></ul>
+    <button class="btn ghost small" id="hist-logout" type="button">ออกจากระบบในเครื่องนี้</button>
+  </div>
+</dialog>
+
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script src="plan.js"></script>
 <script src="presets.js"></script>
 <script src="ledger.js"></script>
+<script src="history.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="app.js"></script>
 </body>

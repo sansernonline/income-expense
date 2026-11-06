@@ -361,7 +361,7 @@ test('NFR_USE_010 · TC-USE-002/003/011/012/013 · TC-GEN-046: มือถื�
   assert.ok(sideBox.width >= 380 && sideBox.width <= 430, String(sideBox.width));
   assert.ok(btnBox.x >= sideBox.x, '"สร้างรายการ" อยู่ในแผงตั้งค่า');
   const barBtns = await d.$$eval('.bar .btn', (els) => els.map((e) => e.textContent));
-  assert.deepEqual(barBtns, ['สุ่มใหม่', 'ย้อนกลับ', 'เพิ่มรายการ', 'ส่งออก Excel']);
+  assert.deepEqual(barBtns, ['สุ่มใหม่', 'ย้อนกลับ', 'เพิ่มรายการ', 'ประวัติ', 'ส่งออก Excel']);
   await K.closeAll(d);
 });
 

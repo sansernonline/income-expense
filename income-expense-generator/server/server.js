@@ -3,6 +3,8 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const { requestPlan } = require('./typhoon.js');
+const { createHistory } = require('./history.js');
+const { b2Config } = require('./b2.js');
 
 // อ่าน .env ด้วยตัวเอง (ไม่ใช้แพ็กเกจ) ค่าที่ตั้งใน environment ชนะไฟล์
 const envFile = path.join(__dirname, '..', '.env');
@@ -24,6 +26,8 @@ const HOST = process.env.HOST || '127.0.0.1';
 const RATE_MAX = Number(process.env.RATE_LIMIT_PER_MIN) || 10; // กันคนอื่นใช้โควตา Typhoon จนหมด
 const MAX_BODY = 10 * 1024;
 const PUBLIC = path.join(__dirname, '..', 'public');
+// ประวัติ: SQLite ใน DATA_DIR · สำรองไป B2 เมื่อตั้งค่า B2_* ครบ (ตั้งไม่ครบ = หยุดตั้งแต่เริ่ม ไม่เงียบ)
+const history = createHistory({ dataDir: process.env.DATA_DIR || path.join(__dirname, '..', 'data'), password: process.env.APP_PASSWORD || '', b2cfg: b2Config() });
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml' };
 
 const send = (res, code, body, type = 'application/json; charset=utf-8') => {
@@ -31,16 +35,16 @@ const send = (res, code, body, type = 'application/json; charset=utf-8') => {
   res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body));
 };
 
-function readBody(req) {
+function readBody(req, limit = MAX_BODY) {
   return new Promise((resolve, reject) => {
     let size = 0;
     const chunks = [];
     req.on('data', (c) => {
       size += c.length;
-      if (size > MAX_BODY) {
+      if (size > limit) {
         chunks.length = 0;
         reject(Object.assign(new Error('too large'), { code: 413 }));
-      } else if (size <= MAX_BODY) chunks.push(c);
+      } else chunks.push(c);
     });
     req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
     req.on('error', reject);
@@ -81,6 +85,17 @@ const server = http.createServer(async (req, res) => {
       return send(res, 400, { error: 'คำขอไม่ถูกต้อง' });
     }
   }
+  if (url.pathname.startsWith('/api/ledgers')) {
+    if (!sameOrigin(req)) return send(res, 403, { error: 'ไม่อนุญาตคำขอจากเว็บอื่น' });
+    try {
+      const r = await history.handle(req, url, clientIp(req), (limit) => readBody(req, limit));
+      return send(res, r.status, r.body);
+    } catch (err) {
+      if (err.code === 413) { res.once('finish', () => req.destroy()); return send(res, 413, { error: 'ข้อมูลใหญ่เกินไป' }); }
+      console.error('ประวัติ: ' + err.message);
+      return send(res, 500, { error: 'เกิดข้อผิดพลาดในเซิร์ฟเวอร์' });
+    }
+  }
   if (req.method !== 'GET') return send(res, 405, { error: 'method not allowed' });
 
   let rel;
@@ -94,6 +109,8 @@ const server = http.createServer(async (req, res) => {
 const start = (port = PORT, onListen) => server.listen(port, HOST, onListen);
 
 if (require.main === module) {
-  start(PORT, () => console.log(`IEGEN เปิดที่ http://${HOST}:${PORT} · Typhoon: ${cfg.apiKey ? 'ตั้งคีย์แล้ว' : 'ยังไม่ตั้งคีย์ (AI ใช้ไม่ได้ คงหมวดเดิม)'}`));
+  start(PORT, () => console.log(`IEGEN เปิดที่ http://${HOST}:${PORT} · Typhoon: ${cfg.apiKey ? 'ตั้งคีย์แล้ว' : 'ยังไม่ตั้งคีย์ (AI ใช้ไม่ได้ คงหมวดเดิม)'} · ประวัติ: ${process.env.APP_PASSWORD ? 'เปิด' : 'ปิด (ยังไม่ตั้ง APP_PASSWORD)'} · สำรอง B2: ${b2Config() ? 'เปิด' : 'ปิด'}`));
+  // Render ส่ง SIGTERM ก่อนปิดเครื่อง: รอการสำรองที่ค้างให้จบก่อน
+  process.once('SIGTERM', () => server.close(() => history.close().finally(() => process.exit(0))));
 }
-module.exports = { server, start };
+module.exports = { server, start, history };

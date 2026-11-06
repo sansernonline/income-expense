@@ -27,3 +27,14 @@ services:
         value: https://api.opentyphoon.ai/v1
       - key: TYPHOON_API_KEY   # ความลับ: ใส่ใน Dashboard ไม่เขียนในไฟล์นี้
         sync: false
+      # ประวัติ: ดิสก์ของแผนฟรีหายทุกครั้งที่ deploy หรือรีสตาร์ต แอปจึงดึงไฟล์ SQLite ล่าสุดจาก B2 ตอนมีคนใช้ครั้งแรก และส่งกลับทุกครั้งที่บันทึกหรือลบ
+      - key: APP_PASSWORD      # ไม่ใส่ = ปิดหน้าต่างประวัติ
+        sync: false
+      - key: B2_ENDPOINT       # เช่น https://s3.us-west-004.backblazeb2.com (ดูในหน้า bucket)
+        sync: false
+      - key: B2_BUCKET
+        sync: false
+      - key: B2_KEY_ID
+        sync: false
+      - key: B2_APPLICATION_KEY
+        sync: false

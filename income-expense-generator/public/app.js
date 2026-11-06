@@ -18,13 +18,15 @@
     return { settings: { type: '', biz: '', start, end, opening: 0, mode: 'month', monthMin: 80000, monthMax: 100000, dayMin: 2000, dayMax: 5000, monthlyRevenue: {}, closedWeekdays: [0], closedDates: [], margin: '', weekendPct: 30, jitterPct: 25, season: {}, seasonPct: 25, txMin: 1, txMax: 2, seed: '' }, rows: [], plan: null, prevRows: null, nextId: 1 };
   }
   let state = load();
+  /** เติมค่าที่ขาดให้ข้อมูลที่เก็บไว้ (localStorage หรือชุดจากประวัติ) · รูปไม่ถูกคืน null */
+  function normalize(s) {
+    if (!(s && s.settings && Array.isArray(s.rows))) return null;
+    const d = defaults(); const st = s.settings; delete s.chat;
+    if (st.defaultRevenue && st.monthMin === undefined) st.monthMin = st.monthMax = st.defaultRevenue; // ข้อมูลรุ่นเก่า
+    return Object.assign(d, s, { settings: Object.assign(d.settings, st) });
+  }
   function load() {
-    try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.settings && Array.isArray(s.rows)) {
-        const d = defaults(); const st = s.settings; delete s.chat;
-        if (st.defaultRevenue && st.monthMin === undefined) st.monthMin = st.monthMax = st.defaultRevenue; // ข้อมูลรุ่นเก่า
-        return Object.assign(d, s, { settings: Object.assign(d.settings, st) });
-      } } catch (e) { /* ใช้ค่าตั้งต้น */ }
-    return defaults();
+    try { return normalize(JSON.parse(localStorage.getItem(KEY))) || defaults(); } catch (e) { return defaults(); }
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* โหมดส่วนตัว: ไม่เก็บ */ } }
 
@@ -390,6 +392,11 @@
       if (!armed) { armed = setTimeout(() => { armed = 0; e.target.textContent = 'ล้างทั้งหมด'; e.target.classList.remove('danger'); }, 4000); e.target.textContent = 'กดอีกครั้งเพื่อยืนยัน'; e.target.classList.add('danger'); return; }
       clearTimeout(armed); armed = 0; e.target.textContent = 'ล้างทั้งหมด'; e.target.classList.remove('danger');
       state = defaults(); save(); renderSettings(); renderPlan(); renderTable(); toast('ล้างข้อมูลแล้ว');
+    });
+    window.IE.history.init({
+      getState: () => state, toast, fmtDate: thDate,
+      defaultName: () => `รายการ ${thDate(S().start)} – ${thDate(S().end)}`,
+      setState: (s) => { state = normalize(s) || state; state.prevRows = null; save(); renderSettings(); renderPlan(); renderTable(); switchTab('ledger'); },
     });
     bindSettings(); bindPlan(); bindAdv(); bindTable(); renderSettings(); renderPlan(); renderTable(); switchTab(state.rows.length ? 'ledger' : 'settings');
   }
