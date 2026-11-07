@@ -29,6 +29,8 @@ let ctx; // { server, base, browser }
 async function boot() {
   if (ctx) return ctx;
   process.env.TYPHOON_API_KEY = ''; process.env.RATE_LIMIT_PER_MIN = '1000'; // ห้ามเรียก Typhoon จริง
+  // ไม่ให้ login ใน .env ของเครื่องนี้ไปขวางทุกเทสต์ (ตัวโหลด .env ไม่ทับค่าที่ตั้งไว้แล้ว) · เทสต์ที่ต้องการ login ตั้งค่าเองก่อนเรียก open()
+  for (const k of ['IEGEN_LOGIN_USER', 'IEGEN_LOGIN_PASSWORD_HASH', 'IEGEN_SESSION_SECRET']) if (!(k in process.env)) process.env[k] = '';
   const { server, start } = require('../server/server.js');
   await new Promise((r) => start(0, r));
   const base = `http://127.0.0.1:${server.address().port}`;

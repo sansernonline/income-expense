@@ -1,58 +1,90 @@
-# Income & Expense (รหัสโปรเจกต์ IEGEN)
+# Income & Expense Generator (IEGEN)
 
-แอปหน้าเดียว ตารางอยู่ซ้าย แผงตั้งค่าอยู่ขวา เลือกประเภทธุรกิจก่อน แล้วระบบเติมหมวดรายรับรายจ่ายให้ตามประเภทนั้น (ปรับ % ได้ ตั้งกำไรเป้าหมาย เดือนขายดี/ซบเซา จำนวนรายการต่อวัน ล็อกผลสุ่มได้) แก้ ลบ เพิ่มรายการในตารางได้ ส่งออก Excel ได้ ปุ่ม “ให้ AI ปรับหมวด” ต่อ Typhoon AI
+เว็บแอปสร้างรายการรายรับรายจ่ายจำลองของธุรกิจเล็ก ๆ เลือกประเภทธุรกิจ (8 แบบสำเร็จรูปหรือพิมพ์เอง) แล้วได้หมวดและช่วงรายรับให้ทันที ปรับตัวเลข แก้ตาราง ส่งออก Excel ได้ ตัวเลขทุกตัวเป็นข้อมูลจำลอง
 
-หน้าตา: ลอกธีมจาก `Bill Gen - Thai Receipt Generator/mockup/BILLGEN-mockup.html` · ต้นแบบที่กดได้: `../mockup/IEGEN-mockup.html` (สร้างใหม่ด้วย `node scripts/build-mockup.js`)
+- ปุ่ม "ให้ AI ปรับหมวด" ใช้ Typhoon AI ถ้าไม่ตั้งคีย์หรือ AI ล้ม แอปคงหมวดเดิม
+- ตั้ง login บัญชีเดียวแล้วแอปจะขึ้นหน้า login ก่อนใช้ (เซิร์ฟเวอร์ปิด `/api/plan` และ `/api/ledgers` ถ้ายังไม่ login) · ไม่ตั้งก็ใช้ได้เลยโดยไม่มีหน้า login แต่ปุ่ม "ประวัติ" ใช้ไม่ได้
+- ปุ่ม "ประวัติ" บันทึกชุดรายรับรายจ่ายลง SQLite และสำรองไป Backblaze B2 ได้
+- AI คืนแค่แผน (หมวด ร้อยละ ความถี่) วันที่และจำนวนเงินโค้ดวางเอง รายรับรวมต่อเดือนจึงตรงเป้า · ส่งไป AI เฉพาะข้อความประเภทธุรกิจ
 
-## ใช้งาน
+## รัน
+
+ต้องใช้ Node 22 ขึ้นไป ตัวแอปไม่มี dependency
 
 ```bash
-cp .env.example .env     # ใส่ TYPHOON_API_KEY (ไม่ใส่ก็ใช้ได้ จะใช้แม่แบบกลาง)
+cp .env.example .env     # ใส่ TYPHOON_API_KEY ถ้าจะใช้ปุ่ม AI (ไม่ใส่ก็ใช้ได้)
 npm start                # เปิด http://127.0.0.1:3000
-npm test                 # เทสต์ทั้งหมดใน public/ และ server/
+npm run dev              # เหมือน start แต่รีสตาร์ตเองเมื่อแก้ไฟล์ฝั่งเซิร์ฟเวอร์
 ```
 
-ต้องใช้ Node 22 ขึ้นไป · ตัวแอปไม่มี dependency · ปุ่มส่งออก Excel โหลดตัวสร้างไฟล์ SheetJS 0.18.5 จาก cdnjs ตอนเปิดหน้า (ต้องต่ออินเทอร์เน็ต)
+แก้ไฟล์ใน `public/` ไม่ต้องรีสตาร์ต แค่รีเฟรชหน้า · ปุ่มส่งออก Excel โหลด SheetJS จาก cdnjs จึงต้องต่ออินเทอร์เน็ต
 
-เทสต์ `public/app-*.test.js` เปิดหน้าจริงในเบราว์เซอร์ จึงต้อง `npm install` เพื่อลง `playwright-core` (devDependency ตัวเดียว) และต้องมี Chromium ที่ Playwright ติดตั้งไว้ในเครื่อง หรือชี้ไฟล์เบราว์เซอร์เองด้วย `IEGEN_CHROME` · ถ้าหาไม่เจอ เทสต์ชุดนี้จะข้าม ส่วนชุดอื่นยังรันตามปกติ
+## เทสต์
 
-ค่าตั้งอื่นที่ใช้ได้: `PORT` (ค่าตั้งต้น 3000) · `HOST` (ค่าตั้งต้น 127.0.0.1) · `RATE_LIMIT_PER_MIN` (ค่าตั้งต้น 10) · `TRUST_PROXY=1` ให้นับ IP จาก `X-Forwarded-For` · `DATA_DIR` (ค่าตั้งต้น `data/`)
+```bash
+npm install              # ครั้งแรก ลง playwright-core
+npm test                 # 199 เทสต์ ใช้เวลาราว 1–2 นาที
+node --test server/b2.test.js   # รันไฟล์เดียว
+```
 
-## โครง
+เทสต์ `public/app-*.test.js` เปิดหน้าจริงในเบราว์เซอร์ จึงต้องมี Chromium ของ Playwright (`npx playwright install chromium`) หรือชี้ไฟล์เบราว์เซอร์ด้วย `IEGEN_CHROME` · หาไม่เจอ ชุดนี้จะข้าม ชุดอื่นยังรัน · Typhoon และ B2 ในเทสต์เป็นตัวจำลอง ไม่เรียกของจริง
 
-| ที่ | หน้าที่ |
-|---|---|
-| `server/server.js` | เสิร์ฟหน้าเว็บ · `GET /healthz` · `POST /api/plan` (ตัวคำขอไม่เกิน 10 KB · IP ละ 10 ครั้งต่อนาที) · รับที่ 127.0.0.1 เว้นแต่ตั้ง `HOST` |
-| `server/history.js` | `/api/ledgers` บันทึก เปิด ลบ ชุดรายรับรายจ่าย (ชุดละไม่เกิน 2 MB และ 20,000 แถว) · ตรวจรหัส `APP_PASSWORD` · ใส่ผิด 10 ครั้งใน 15 นาทีล็อก IP นั้น · ผิดรวมทุก IP 50 ครั้งล็อกทั้งหมด 15 นาที |
-| `server/store.js` | ฐานข้อมูล SQLite (`node:sqlite` มากับ Node 22) ตาราง `ledgers` |
-| `server/b2.js` | ส่งและดึงไฟล์ SQLite กับ Backblaze B2 ผ่าน S3 API (ลายเซ็น v4 เขียนเอง) |
-| `public/history.js` | หน้าต่าง "ประวัติ" |
-| `server/typhoon.js` | ตัวเชื่อม Typhoon · ลองซ้ำ 1 ครั้ง · หมดเวลา 40 วินาที · ล้มแล้วใช้แม่แบบกลาง |
-| `public/plan.js` | แม่แบบกลาง + ตรวจ/ทำความสะอาดแผนจาก AI |
-| `public/presets.js` | ประเภทธุรกิจสำเร็จรูป: หมวดรายรับ หมวดรายจ่าย และช่วงรายรับตั้งต้น (ตัวเลขเป็นค่าสมมติ รอยืนยัน) |
-| `public/ledger.js` | สร้างรายการ · คงเหลือ · ยอดรวม (ฟังก์ชันล้วน มีเทสต์ข้างไฟล์) |
-| `public/app.js` · `index.html` · `styles.css` | หน้าจอ |
-| `test-kit/e2e-kit.js` | ตัวช่วยของเทสต์ที่เปิดเบราว์เซอร์ เปิดเซิร์ฟเวอร์จริงที่พอร์ตสุ่ม ส่วน Typhoon ใช้ตัวจำลอง |
-| `scripts/build-mockup.js` | สร้าง `../mockup/IEGEN-mockup.html` ไฟล์เดียวจากโค้ดแอป (Typhoon และ `/api/ledgers` เป็นตัวจำลอง) |
+## ค่าตั้ง (.env)
 
-## ประวัติและการสำรองไป Backblaze B2
+| ค่า | ใช้ทำอะไร | ค่าตั้งต้น |
+|---|---|---|
+| `TYPHOON_API_KEY` | คีย์จาก https://playground.opentyphoon.ai | ว่าง (ปุ่ม AI ใช้ไม่ได้) |
+| `TYPHOON_MODEL` · `TYPHOON_BASE_URL` | โมเดลและปลายทาง | `typhoon-v2.5-30b-a3b-instruct` · `https://api.opentyphoon.ai/v1` |
+| `PORT` · `HOST` | พอร์ตและที่อยู่ที่รับ | `3000` · `127.0.0.1` |
+| `RATE_LIMIT_PER_MIN` | จำนวนครั้งที่ 1 IP เรียก AI ได้ต่อนาที | `10` |
+| `TRUST_PROXY` | ตั้ง `1` เมื่ออยู่หลัง proxy ให้นับ IP จาก `X-Forwarded-For` | ปิด |
+| `IEGEN_LOGIN_USER` `IEGEN_LOGIN_PASSWORD_HASH` `IEGEN_SESSION_SECRET` | login บัญชีเดียว ต้องตั้งครบ 3 ตัว (ดูหัวข้อ login) | ว่าง (ไม่มีหน้า login และปิดประวัติ) |
+| `DATA_DIR` | โฟลเดอร์เก็บ SQLite | `data/` |
+| `B2_ENDPOINT` `B2_BUCKET` `B2_KEY_ID` `B2_APPLICATION_KEY` | สำรองไป B2 ต้องตั้งครบ 4 ตัว | ว่าง (ไม่สำรอง) |
+| `B2_OBJECT_KEY` · `B2_REGION` | ชื่อไฟล์บน bucket · region เมื่ออ่านจาก endpoint ไม่ได้ | `iegen/iegen.sqlite` |
 
-ปุ่ม "ประวัติ" บนแถบตาราง บันทึกชุดปัจจุบัน (ตั้งค่า หมวด ตาราง) ลง SQLite ที่ `data/iegen.sqlite` เปิดชุดเก่ากลับมา หรือลบได้ · ใช้ได้เมื่อตั้ง `APP_PASSWORD` · หน้าเว็บจำรหัสไว้ในเบราว์เซอร์นั้นจนกด "ออกจากระบบในเครื่องนี้"
+ค่าลับอยู่ใน `.env` ฝั่งเซิร์ฟเวอร์ ไม่ส่งถึงเบราว์เซอร์ และ `.env` ไม่เข้า git
 
-ตั้ง `B2_ENDPOINT` `B2_BUCKET` `B2_KEY_ID` `B2_APPLICATION_KEY` ครบ 4 ตัว แอปจะส่งไฟล์ทั้งก้อนไปที่ `iegen/iegen.sqlite` ใน bucket หลังบันทึกหรือลบทุกครั้ง และถ้าเครื่องไม่มีไฟล์ (Render แผนฟรีล้างดิสก์ทุกครั้งที่ deploy หรือรีสตาร์ต) จะดึงไฟล์ล่าสุดมาก่อนเปิดฐานข้อมูล · ดึงไม่สำเร็จจะตอบ 503 และไม่เปิดฐานว่าง เพื่อไม่ให้ส่งฐานว่างไปทับไฟล์บน B2
+## login
 
-ถ้าไม่ตั้งเลยสักตัว แอปจะไม่สำรอง ส่วนถ้าตั้งไม่ครบ 4 ตัว หรือ `B2_ENDPOINT` ไม่ใช่ https เซิร์ฟเวอร์จะไม่เปิด · ตั้งเพิ่มได้ 2 ตัว: `B2_OBJECT_KEY` เปลี่ยนชื่อไฟล์บน bucket และ `B2_REGION` ใช้เมื่อแอปอ่าน region จาก endpoint ไม่ได้
+ตั้งชื่อผู้ใช้ รหัสผ่าน และความลับของเซสชันใน `.env` (หรือ Render Dashboard):
 
-ตั้งฝั่ง Backblaze:
+```bash
+npm run password-hash    # พิมพ์รหัสผ่านแล้วกด Enter
+```
+
+คำสั่งพิมพ์ 2 บรรทัด `IEGEN_LOGIN_PASSWORD_HASH=...` และ `IEGEN_SESSION_SECRET=...` ให้คัดลอกไป `.env` พร้อมเติม `IEGEN_LOGIN_USER=ชื่อที่ต้องการ` · แนะนำรหัสผ่านอย่างน้อย 15 ตัวอักษร · ค่าที่ได้เก็บแค่แฮช ไม่เก็บรหัสจริง
+
+- เข้าระบบแล้วเซิร์ฟเวอร์ตั้งคุกกี้ `iegen_session` (HttpOnly) อยู่ 12 ชั่วโมง หรือ 30 วันถ้าติ๊ก "จำฉันไว้" · ไม่มีที่เก็บเซสชันฝั่งเซิร์ฟเวอร์
+- รหัสผิด 5 ครั้งใน 15 นาที ล็อก IP นั้น และผิดรวมทุก IP 50 ครั้ง ล็อกทั้งหมด 15 นาที
+- ลืมรหัสผ่านหรืออยากให้ทุกเครื่องออกจากระบบ ให้สร้างค่าใหม่ด้วยคำสั่งข้างบน แล้วเปลี่ยนใน env (เปลี่ยน `IEGEN_SESSION_SECRET` อย่างเดียวก็ทำให้ทุกคนต้องเข้าใหม่)
+- ตั้งไม่ครบ 3 ตัว หรือ `IEGEN_SESSION_SECRET` สั้นกว่า 32 ตัวอักษร เซิร์ฟเวอร์จะไม่เปิด
+
+## สำรองไป Backblaze B2
+
+ตั้ง `B2_*` ครบ 4 ตัว แอปจะส่งไฟล์ SQLite ไป bucket หลังบันทึกหรือลบทุกครั้ง และดึงไฟล์ล่าสุดมาถ้าเครื่องไม่มีไฟล์ (Render แผนฟรีล้างดิสก์ทุกครั้งที่ deploy) · ดึงไม่สำเร็จจะตอบ 503 ไม่เปิดฐานว่างมาทับไฟล์บน B2 · ตั้งไม่ครบ หรือ endpoint ไม่ใช่ https เซิร์ฟเวอร์จะไม่เปิด
+
 1. สร้าง bucket แบบ Private
-2. สร้าง application key จำกัดเฉพาะ bucket นี้ สิทธิ์ `listFiles` `readFiles` `writeFiles` (ไม่ต้องมี `deleteFiles`) · คีย์แสดงครั้งเดียว ใส่ใน Render Dashboard ทันที
-3. `B2_ENDPOINT` ดูได้ในหน้า bucket (รูปแบบ `https://s3.<region>.backblazeb2.com`)
-4. B2 เก็บทุกเวอร์ชันของไฟล์ชื่อเดิม ทุกครั้งที่บันทึกจึงเพิ่มอีกเวอร์ชัน ใช้ย้อนกลับได้ แต่คิดเป็นพื้นที่เก็บด้วย · ถ้าอยากจำกัด ตั้งกฎ lifecycle ที่ prefix `iegen/` เช่น "Keep prior versions for this number of days"
-
-ทดสอบ: `node --test server/b2.test.js server/history.test.js public/app-hist.test.js` (B2 จำลองในเครื่อง ไม่เรียกของจริง)
+2. สร้าง application key จำกัดเฉพาะ bucket นี้ สิทธิ์ `listFiles` `readFiles` `writeFiles` (คีย์แสดงครั้งเดียว)
+3. `B2_ENDPOINT` ดูในหน้า bucket (รูปแบบ `https://s3.<region>.backblazeb2.com`)
+4. B2 เก็บทุกเวอร์ชันของไฟล์ ถ้าอยากจำกัดพื้นที่ ตั้งกฎ lifecycle ที่ prefix `iegen/`
 
 ## ขึ้น Render
 
-`../render.yaml` ที่รากโปรเจกต์เป็น Blueprint ของ Render: แผนฟรี · ภูมิภาค Singapore · `rootDir` ชี้มาที่โฟลเดอร์นี้ · health check ที่ `/healthz` · ตั้ง `HOST=0.0.0.0` และ `TRUST_PROXY=1` ไว้แล้ว · ค่าลับ (`TYPHOON_API_KEY` `APP_PASSWORD` `B2_*`) ใส่ใน Render Dashboard ไม่เขียนลงไฟล์ · วิธีใช้: Render Dashboard → New → Blueprint → เลือก repo นี้
+`../render.yaml` เป็น Blueprint: แผนฟรี · Singapore · health check `/healthz` · ตั้ง `HOST` และ `TRUST_PROXY` ไว้แล้ว
 
-หลักคิด: AI คืน "แผน" (หมวด · ร้อยละของรายรับ · ความถี่) ส่วนวันที่และจำนวนเงินโค้ดวางเอง เพื่อให้รายรับรวมต่อเดือนตรงเป้าพอดี · ส่งไป AI เฉพาะข้อความประเภทธุรกิจ
+Render Dashboard → New → Blueprint → เลือก repo นี้ แล้วใส่ค่าลับ (`TYPHOON_API_KEY` `IEGEN_LOGIN_*` `B2_*`) ใน Dashboard
+
+## โครงโค้ด
+
+| ที่ | หน้าที่ |
+|---|---|
+| `server/server.js` | เสิร์ฟหน้าเว็บ · `/healthz` · `POST /api/plan` |
+| `server/typhoon.js` | ตัวเชื่อม Typhoon (หมดเวลา 40 วินาที ลองซ้ำ 1 ครั้ง) |
+| `server/auth.js` | login: แฮชรหัสผ่าน (scrypt) · คุกกี้เซสชัน · ล็อกเมื่อรหัสผิด (`/api/login` `/api/logout` `/api/session`) |
+| `server/history.js` · `store.js` · `b2.js` | ประวัติ (`/api/ledgers`) · SQLite · สำรอง B2 |
+| `public/presets.js` · `plan.js` · `ledger.js` | ประเภทธุรกิจ · ตรวจแผนจาก AI · สร้างรายการและยอดคงเหลือ |
+| `public/app.js` · `login.js` · `history.js` · `index.html` · `styles.css` | หน้าจอ (`login.js` = หน้า login) |
+| `test-kit/` · `scripts/` | ตัวช่วยเทสต์ · `build-mockup.js` สร้าง `../mockup/IEGEN-mockup.html` · `password-hash.js` สร้างค่า login |
+
+เอกสารอื่นอยู่ที่ `../docs/` (BRIEF · SRS · DECISIONS · BUILD-PLAN)

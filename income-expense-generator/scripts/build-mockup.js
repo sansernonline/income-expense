@@ -22,7 +22,20 @@ const ledgerApi = (url, opts = {}) => {
   if (id) return reply(mockLedgers.find((l) => l.id === id));
   return reply({ items: mockLedgers.map(({ data, ...meta }) => meta) });
 };
+/* mockup: ตัวแทน /api/session /api/login /api/logout · ชื่อกับรหัสอะไรก็เข้าได้ ยกเว้นรหัส wrong (ไว้ดูหน้าตาตอนผิด) · จำสถานะเข้าระบบไว้ใน localStorage แทนคุกกี้ */
+const LOGIN_KEY = 'iegen.mock-login';
+const authApi = (url, opts = {}) => {
+  const reply = (status, body) => ({ ok: status === 200, status, json: async () => body });
+  const on = () => { try { return localStorage.getItem(LOGIN_KEY); } catch (e) { return null; } };
+  if (url === '/api/session') return on() ? reply(200, { required: true, user: on() }) : reply(401, {});
+  if (url === '/api/logout') { try { localStorage.removeItem(LOGIN_KEY); } catch (e) { /* ข้าม */ } return reply(200, { ok: true }); }
+  const { user, password } = JSON.parse(opts.body);
+  if (password === 'wrong') return reply(401, { error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
+  try { localStorage.setItem(LOGIN_KEY, user); } catch (e) { /* ข้าม */ }
+  return reply(200, { ok: true });
+};
 window.fetch = async (url, opts) => {
+  if (['/api/session', '/api/login', '/api/logout'].includes(String(url))) return authApi(String(url), opts);
   if (String(url).startsWith('/api/ledgers')) return ledgerApi(String(url), opts);
   await new Promise((r) => setTimeout(r, 700));
   if (window.__mockAi === 'down') throw new Error('mock: AI down');
@@ -42,19 +55,21 @@ const bar = `
   <button type="button" id="mb-gen">2 · เลือกร้านกาแฟ + สร้างรายการ</button>
   <button type="button" id="mb-ai">3 · ให้ AI ปรับ (AI ตอบ)</button>
   <button type="button" id="mb-down">4 · ให้ AI ปรับ (AI ใช้ไม่ได้)</button>
-  <span>ย่อหน้าต่าง ≤ 860 px เพื่อดูแบบมือถือ</span>
+  <button type="button" id="mb-login">5 · ดูหน้า login</button>
+  <span>ชื่อและรหัสอะไรก็เข้าได้ ใส่รหัส wrong เพื่อดูตอนผิด · ย่อหน้าต่าง ≤ 860 px เพื่อดูแบบมือถือ</span>
 </div>`;
 const barCss = `
-.mockbar{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 16px;background:#131318;color:#F2F2F5;font-size:12px;z-index:9}
+.mockbar{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 16px;background:#131318;color:#F2F2F5;font-size:12px;z-index:30}
 .mockbar b{letter-spacing:.08em;color:#FB7185}.mockbar button{height:28px;padding:0 12px;border-radius:999px;border:1px solid #55555F;color:#F2F2F5}
 .mockbar button:hover{background:#26262E}.mockbar span{color:#A9A9B6;margin-left:auto}
-body{padding-bottom:48px}@media print{.mockbar{display:none}}`;
+body{padding-bottom:48px}@media(max-width:860px){.login{padding-bottom:150px;align-items:flex-start}}@media print{.mockbar{display:none}}`;
 const barJs = `
 (function(){const $=(i)=>document.getElementById(i);
 const pick=()=>{if(!document.querySelector('[data-type=coffee][aria-pressed=true]'))document.querySelector('[data-type=coffee]').click();};
 $('mb-empty').onclick=()=>{try{localStorage.removeItem('iegen.v1')}catch(e){}location.reload();};
 $('mb-gen').onclick=()=>{pick();$('btn-gen').click();};
 $('mb-ai').onclick=()=>{window.__mockAi='up';pick();$('btn-ai').click();};
+$('mb-login').onclick=()=>$('btn-logout').click();
 $('mb-down').onclick=()=>{window.__mockAi='down';pick();$('btn-ai').click();};})();`;
 
 let html = read('index.html')
@@ -65,6 +80,9 @@ let html = read('index.html')
 ${read('presets.js')}
 </script>`)
   .replace('<script src="ledger.js"></script>', `<script>\n${read('ledger.js')}\n</script>`)
+  .replace('<script src="login.js"></script>', `<script>
+${read('login.js')}
+</script>`)
   .replace('<script src="history.js"></script>', `<script>\n${read('history.js')}\n</script>`)
   .replace('<script src="app.js"></script>', `<script>\n${stub}\n${read('app.js')}\n${barJs}\n</script>`)
   .replace('<div class="toast"', `${bar}\n<div class="toast"`);

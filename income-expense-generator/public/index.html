@@ -16,6 +16,7 @@
   <div class="top-actions">
     <button class="btn ghost" id="btn-clear" type="button">ล้างทั้งหมด</button>
     <button class="btn ghost" id="btn-theme" type="button" aria-label="สลับโหมดสว่าง/มืด">โหมดมืด</button>
+    <button class="btn ghost" id="btn-logout" type="button" hidden>ออกจากระบบ</button>
   </div>
 </header>
 
@@ -135,25 +136,35 @@
 
 <dialog class="hist" id="hist" aria-labelledby="hist-h">
   <form method="dialog" class="hist-head"><h2 id="hist-h">ประวัติที่บันทึก</h2><button class="btn ghost" value="close">ปิด</button></form>
-  <div id="hist-login" hidden>
-    <label class="field">รหัสผ่านของแอป<input id="hist-pass" type="password" autocomplete="current-password"></label>
-    <p class="err" id="hist-login-err" role="alert"></p>
-    <button class="btn primary" id="hist-login-btn" type="button">เข้าใช้</button>
-  </div>
-  <div id="hist-main" hidden>
+  <div id="hist-main">
     <div class="addrow"><input id="hist-name" type="text" maxlength="100" aria-label="ชื่อชุดที่จะบันทึก"><button class="btn primary" id="hist-save" type="button">บันทึกชุดนี้</button></div>
     <p class="lbl sm" id="hist-note" role="status"></p>
     <p class="lbl sm" id="hist-empty" hidden>ยังไม่มีชุดที่บันทึกไว้</p>
     <ul class="hist-list" id="hist-list"></ul>
-    <button class="btn ghost small" id="hist-logout" type="button">ออกจากระบบในเครื่องนี้</button>
   </div>
 </dialog>
 
 <div class="toast" id="toast" role="status" hidden></div>
 
+<section class="login" id="login" aria-labelledby="login-h" hidden>
+  <form class="login-card" id="login-form" novalidate>
+    <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM4 10h16M12 10v9"/></svg><b>Income &amp; Expense</b></div>
+    <h1 id="login-h">เข้าใช้งาน</h1>
+    <p class="login-lead">ใส่ชื่อผู้ใช้และรหัสผ่านเพื่อเริ่มใช้งาน</p>
+    <label class="field">ชื่อผู้ใช้<input id="login-user" type="text" autocomplete="username" autocapitalize="none" spellcheck="false"></label>
+    <label class="field">รหัสผ่าน
+      <span class="pw"><input id="login-pass" type="password" autocomplete="current-password"><button class="btn ghost small" id="login-eye" type="button" aria-pressed="false" aria-controls="login-pass">แสดง</button></span>
+    </label>
+    <label class="remember"><input id="login-remember" type="checkbox"> จำฉันไว้ 30 วัน</label>
+    <p class="err" id="login-err" role="alert"></p>
+    <button class="btn primary" id="login-btn" type="submit">เข้าใช้งาน</button>
+  </form>
+</section>
+
 <script src="plan.js"></script>
 <script src="presets.js"></script>
 <script src="ledger.js"></script>
+<script src="login.js"></script>
 <script src="history.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="app.js"></script>

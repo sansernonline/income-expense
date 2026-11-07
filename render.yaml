@@ -27,8 +27,13 @@ services:
         value: https://api.opentyphoon.ai/v1
       - key: TYPHOON_API_KEY   # ความลับ: ใส่ใน Dashboard ไม่เขียนในไฟล์นี้
         sync: false
-      # ประวัติ: ดิสก์ของแผนฟรีหายทุกครั้งที่ deploy หรือรีสตาร์ต แอปจึงดึงไฟล์ SQLite ล่าสุดจาก B2 ตอนมีคนใช้ครั้งแรก และส่งกลับทุกครั้งที่บันทึกหรือลบ
-      - key: APP_PASSWORD      # ไม่ใส่ = ปิดหน้าต่างประวัติ
+      # ประวัติ (ต้องตั้ง login ก่อน): ดิสก์ของแผนฟรีหายทุกครั้งที่ deploy หรือรีสตาร์ต แอปจึงดึงไฟล์ SQLite ล่าสุดจาก B2 ตอนมีคนใช้ครั้งแรก และส่งกลับทุกครั้งที่บันทึกหรือลบ
+      # login บัญชีเดียว: สร้าง HASH กับ SECRET ด้วย npm run password-hash · ไม่ใส่ทั้ง 3 ตัว = ไม่มีหน้า login และปิดประวัติ
+      - key: IEGEN_LOGIN_USER
+        sync: false
+      - key: IEGEN_LOGIN_PASSWORD_HASH
+        sync: false
+      - key: IEGEN_SESSION_SECRET
         sync: false
       - key: B2_ENDPOINT       # เช่น https://s3.us-west-004.backblazeb2.com (ดูในหน้า bucket)
         sync: false

@@ -76,7 +76,7 @@ button[disabled]{opacity:.45;cursor:default}
 .field{display:flex;flex-direction:column;gap:var(--s1);font-size:var(--fs-sm);color:var(--text-2);min-width:0}
 .field .lbl{color:var(--text-2)}
 .span2{grid-column:span 2}
-input[type=text],input[type=date],input[type=number],select{height:36px;padding:0 var(--s3);border:1px solid var(--line-2);border-radius:var(--r-ctl);background:var(--surface);color:var(--text);min-width:0;width:100%}
+input[type=text],input[type=password],input[type=date],input[type=number],select{height:36px;padding:0 var(--s3);border:1px solid var(--line-2);border-radius:var(--r-ctl);background:var(--surface);color:var(--text);min-width:0;width:100%}
 .range{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3)}
 .range label{display:flex;flex-direction:column;gap:2px;font-size:var(--fs-xs)}
 .lbl.sm{font-size:var(--fs-xs);color:var(--text-3)}
@@ -177,10 +177,24 @@ td:nth-child(1){width:140px}td:nth-child(3),td:nth-child(4){width:112px}td:nth-c
 .hist-list b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hist-list .btn.small{align-self:center}
 
-.mockbar{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 16px;background:#131318;color:#F2F2F5;font-size:12px;z-index:9}
+/* หน้า login: คลุมทั้งจอ ใช้ธีมเดียวกับแอป */
+.login{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:var(--s4);background:var(--bg-grad);background-color:var(--desk);overflow:auto}
+.login-card{width:min(400px,100%);display:flex;flex-direction:column;gap:var(--s4);padding:var(--s6);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-panel);box-shadow:var(--panel-sh)}
+.login-card h1{font:600 var(--fs-lg)/1.3 var(--font-h);margin-top:var(--s2)}
+.login-lead{color:var(--text-2);margin-top:calc(var(--s2) * -1)}
+.login .pw{position:relative;display:block}
+.login .field input{height:44px}
+.login .pw input{padding-right:72px}
+.login .pw .btn{position:absolute;right:var(--s2);top:50%;transform:translateY(-50%)}
+.login .remember{display:flex;align-items:center;gap:var(--s2);color:var(--text-2);font-size:var(--fs-sm)}
+.login .remember input{width:16px;height:16px;accent-color:var(--accent-fill)}
+.login .err:empty{display:none}
+.login-card>.btn.primary{height:44px;font-size:var(--fs-base)}
+
+.mockbar{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 16px;background:#131318;color:#F2F2F5;font-size:12px;z-index:30}
 .mockbar b{letter-spacing:.08em;color:#FB7185}.mockbar button{height:28px;padding:0 12px;border-radius:999px;border:1px solid #55555F;color:#F2F2F5}
 .mockbar button:hover{background:#26262E}.mockbar span{color:#A9A9B6;margin-left:auto}
-body{padding-bottom:48px}@media print{.mockbar{display:none}}
+body{padding-bottom:48px}@media(max-width:860px){.login{padding-bottom:150px;align-items:flex-start}}@media print{.mockbar{display:none}}
 </style>
 </head>
 <body>
@@ -189,6 +203,7 @@ body{padding-bottom:48px}@media print{.mockbar{display:none}}
   <div class="top-actions">
     <button class="btn ghost" id="btn-clear" type="button">ล้างทั้งหมด</button>
     <button class="btn ghost" id="btn-theme" type="button" aria-label="สลับโหมดสว่าง/มืด">โหมดมืด</button>
+    <button class="btn ghost" id="btn-logout" type="button" hidden>ออกจากระบบ</button>
   </div>
 </header>
 
@@ -308,17 +323,11 @@ body{padding-bottom:48px}@media print{.mockbar{display:none}}
 
 <dialog class="hist" id="hist" aria-labelledby="hist-h">
   <form method="dialog" class="hist-head"><h2 id="hist-h">ประวัติที่บันทึก</h2><button class="btn ghost" value="close">ปิด</button></form>
-  <div id="hist-login" hidden>
-    <label class="field">รหัสผ่านของแอป<input id="hist-pass" type="password" autocomplete="current-password"></label>
-    <p class="err" id="hist-login-err" role="alert"></p>
-    <button class="btn primary" id="hist-login-btn" type="button">เข้าใช้</button>
-  </div>
-  <div id="hist-main" hidden>
+  <div id="hist-main">
     <div class="addrow"><input id="hist-name" type="text" maxlength="100" aria-label="ชื่อชุดที่จะบันทึก"><button class="btn primary" id="hist-save" type="button">บันทึกชุดนี้</button></div>
     <p class="lbl sm" id="hist-note" role="status"></p>
     <p class="lbl sm" id="hist-empty" hidden>ยังไม่มีชุดที่บันทึกไว้</p>
     <ul class="hist-list" id="hist-list"></ul>
-    <button class="btn ghost small" id="hist-logout" type="button">ออกจากระบบในเครื่องนี้</button>
   </div>
 </dialog>
 
@@ -329,9 +338,25 @@ body{padding-bottom:48px}@media print{.mockbar{display:none}}
   <button type="button" id="mb-gen">2 · เลือกร้านกาแฟ + สร้างรายการ</button>
   <button type="button" id="mb-ai">3 · ให้ AI ปรับ (AI ตอบ)</button>
   <button type="button" id="mb-down">4 · ให้ AI ปรับ (AI ใช้ไม่ได้)</button>
-  <span>ย่อหน้าต่าง ≤ 860 px เพื่อดูแบบมือถือ</span>
+  <button type="button" id="mb-login">5 · ดูหน้า login</button>
+  <span>ชื่อและรหัสอะไรก็เข้าได้ ใส่รหัส wrong เพื่อดูตอนผิด · ย่อหน้าต่าง ≤ 860 px เพื่อดูแบบมือถือ</span>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
+
+<section class="login" id="login" aria-labelledby="login-h" hidden>
+  <form class="login-card" id="login-form" novalidate>
+    <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM4 10h16M12 10v9"/></svg><b>Income &amp; Expense</b></div>
+    <h1 id="login-h">เข้าใช้งาน</h1>
+    <p class="login-lead">ใส่ชื่อผู้ใช้และรหัสผ่านเพื่อเริ่มใช้งาน</p>
+    <label class="field">ชื่อผู้ใช้<input id="login-user" type="text" autocomplete="username" autocapitalize="none" spellcheck="false"></label>
+    <label class="field">รหัสผ่าน
+      <span class="pw"><input id="login-pass" type="password" autocomplete="current-password"><button class="btn ghost small" id="login-eye" type="button" aria-pressed="false" aria-controls="login-pass">แสดง</button></span>
+    </label>
+    <label class="remember"><input id="login-remember" type="checkbox"> จำฉันไว้ 30 วัน</label>
+    <p class="err" id="login-err" role="alert"></p>
+    <button class="btn primary" id="login-btn" type="submit">เข้าใช้งาน</button>
+  </form>
+</section>
 
 <script>
 /* แผนรายรับรายจ่าย: แม่แบบกลาง + ตัวทำความสะอาดแผนที่ AI ส่งมา (BR-060, NFR-SEC-020)
@@ -698,12 +723,73 @@ body{padding-bottom:48px}@media print{.mockbar{display:none}}
 
 </script>
 <script>
+/* หน้า login: ถ้าเซิร์ฟเวอร์ตั้ง IEGEN_LOGIN_* ไว้ ต้องใส่ชื่อผู้ใช้และรหัสผ่านก่อนใช้แอป · ไม่ตั้ง = ไม่มีหน้านี้
+   เซิร์ฟเวอร์ตั้งคุกกี้เซสชัน (HttpOnly) ให้ ฝั่งหน้าเว็บไม่เก็บรหัสไว้เลย */
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const post = (path, body) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+
+  /** ปิดกั้นแอปที่อยู่ด้านหลัง ไม่ให้กด Tab หรืออ่านด้วยโปรแกรมอ่านจอได้ขณะยังไม่ login */
+  const shell = () => document.querySelectorAll('body > header, body > nav, body > main');
+  let required = false;
+  function lock(on) {
+    $('login').hidden = !on;
+    shell().forEach((el) => { el.inert = on; });
+    $('btn-logout').hidden = on || !required;
+  }
+
+  function show(msg) {
+    required = true;
+    lock(true);
+    $('login-err').textContent = msg || '';
+    ($('login-user').value ? $('login-pass') : $('login-user')).focus();
+  }
+
+  /** ถามเซิร์ฟเวอร์ว่าต้อง login ไหม และคุกกี้เดิมยังใช้ได้ไหม */
+  async function verify() {
+    let r, body = {};
+    try { r = await fetch('/api/session'); body = await r.json().catch(() => ({})); } catch (e) { return; } // ต่อเซิร์ฟเวอร์ไม่ได้ ปล่อยแอปทำงานต่อ
+    if (r.ok) { required = body.required; return lock(false); }
+    if (r.status === 401) show(); // เข้าครั้งแรกหรือคุกกี้หมดอายุ ยังไม่ต้องขึ้นข้อความผิด
+  }
+
+  async function submit() {
+    const user = $('login-user').value.trim(), password = $('login-pass').value;
+    if (!user || !password) return show('ใส่ชื่อผู้ใช้และรหัสผ่านให้ครบ');
+    $('login-btn').disabled = true;
+    try {
+      const r = await post('/api/login', { user, password, remember: $('login-remember').checked });
+      const body = await r.json().catch(() => ({}));
+      if (r.ok) { required = true; $('login-pass').value = ''; return lock(false); }
+      show(body.error || 'เข้าไม่ได้ ลองใหม่อีกครั้ง');
+      $('login-pass').select();
+    } catch (e) { show('ติดต่อเซิร์ฟเวอร์ไม่ได้ ลองใหม่อีกครั้ง'); } finally { $('login-btn').disabled = false; }
+  }
+
+  /** คำขอ /api/* ตอบ 401 (คุกกี้หมดอายุหรือความลับถูกเปลี่ยน) → กลับหน้า login */
+  const expired = (msg) => show(msg);
+  async function logout() { try { await post('/api/logout'); } catch (e) { /* ล้างฝั่งเซิร์ฟเวอร์ไม่ได้ ก็ยังกลับหน้า login */ } $('login-pass').value = ''; show(); }
+
+  function init() {
+    $('login-form').addEventListener('submit', (e) => { e.preventDefault(); submit(); });
+    $('login-eye').addEventListener('click', () => {
+      const f = $('login-pass'), hide = f.type === 'text';
+      f.type = hide ? 'password' : 'text';
+      $('login-eye').textContent = hide ? 'แสดง' : 'ซ่อน';
+      $('login-eye').setAttribute('aria-pressed', String(!hide));
+    });
+    $('btn-logout').addEventListener('click', logout);
+    return verify();
+  }
+
+  window.IE = Object.assign(window.IE || {}, { auth: { init, expired, logout } });
+})();
+
+</script>
+<script>
 /* หน้าต่าง "ประวัติ": บันทึกชุดปัจจุบันลงฐานข้อมูลบนเซิร์ฟเวอร์ · เปิดชุดเก่า · ลบ (เรียก /api/ledgers) */
 (function () {
-  const PASS_KEY = 'iegen.pass';
   const $ = (id) => document.getElementById(id);
-  const getPass = () => { try { return localStorage.getItem(PASS_KEY) || ''; } catch (e) { return ''; } };
-  const setPass = (v) => { try { v ? localStorage.setItem(PASS_KEY, v) : localStorage.removeItem(PASS_KEY); } catch (e) { /* โหมดส่วนตัว */ } };
   const BACKUP = { ok: 'สำรองไป Backblaze แล้ว', failed: 'แต่สำรองไป Backblaze ไม่สำเร็จ (ข้อมูลยังอยู่บนเซิร์ฟเวอร์ จะสำรองอีกครั้งตอนบันทึกครั้งถัดไป)', off: 'ยังไม่ได้ตั้งการสำรองไป Backblaze' };
 
   /** app: { getState, setState, defaultName, toast, fmtDate } */
@@ -711,23 +797,15 @@ body{padding-bottom:48px}@media print{.mockbar{display:none}}
     const dlg = $('hist');
 
     async function call(path, opts = {}) {
-      const r = await fetch('/api/ledgers' + path, { ...opts, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getPass() } });
+      const r = await fetch('/api/ledgers' + path, { ...opts, headers: { 'Content-Type': 'application/json' } });
       const body = await r.json().catch(() => ({}));
-      if (r.status === 401) { setPass(''); showLogin(body.error); }
+      if (r.status === 401) { dlg.close(); window.IE.auth.expired(body.error); } // เซสชันหมดอายุ กลับหน้า login
       if (!r.ok) throw Object.assign(new Error(body.error || 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'), { status: r.status });
       return body;
     }
     const note = (msg) => { $('hist-note').textContent = msg || ''; };
 
-    function showLogin(msg) {
-      $('hist-login').hidden = false; $('hist-main').hidden = true;
-      $('hist-login-err').textContent = msg || '';
-      $('hist-pass').focus();
-    }
-
     async function refresh() {
-      if (!getPass()) return showLogin();
-      $('hist-login').hidden = true; $('hist-main').hidden = false;
       try { const { items } = await call(''); render(items); } catch (e) { if (e.status !== 401) note(e.message); }
     }
 
@@ -770,9 +848,6 @@ body{padding-bottom:48px}@media print{.mockbar{display:none}}
 
     $('btn-hist').addEventListener('click', () => { note(''); $('hist-name').placeholder = app.defaultName(); dlg.showModal(); refresh(); });
     $('hist-save').addEventListener('click', save);
-    $('hist-login-btn').addEventListener('click', () => { setPass($('hist-pass').value); refresh().then(() => { if (getPass()) $('hist-pass').value = ''; }); });
-    $('hist-pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('hist-login-btn').click(); });
-    $('hist-logout').addEventListener('click', () => { setPass(''); $('hist-pass').value = ''; showLogin(); });
   }
 
   window.IE = Object.assign(window.IE || {}, { history: { init } });
@@ -798,7 +873,20 @@ const ledgerApi = (url, opts = {}) => {
   if (id) return reply(mockLedgers.find((l) => l.id === id));
   return reply({ items: mockLedgers.map(({ data, ...meta }) => meta) });
 };
+/* mockup: ตัวแทน /api/session /api/login /api/logout · ชื่อกับรหัสอะไรก็เข้าได้ ยกเว้นรหัส wrong (ไว้ดูหน้าตาตอนผิด) · จำสถานะเข้าระบบไว้ใน localStorage แทนคุกกี้ */
+const LOGIN_KEY = 'iegen.mock-login';
+const authApi = (url, opts = {}) => {
+  const reply = (status, body) => ({ ok: status === 200, status, json: async () => body });
+  const on = () => { try { return localStorage.getItem(LOGIN_KEY); } catch (e) { return null; } };
+  if (url === '/api/session') return on() ? reply(200, { required: true, user: on() }) : reply(401, {});
+  if (url === '/api/logout') { try { localStorage.removeItem(LOGIN_KEY); } catch (e) { /* ข้าม */ } return reply(200, { ok: true }); }
+  const { user, password } = JSON.parse(opts.body);
+  if (password === 'wrong') return reply(401, { error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
+  try { localStorage.setItem(LOGIN_KEY, user); } catch (e) { /* ข้าม */ }
+  return reply(200, { ok: true });
+};
 window.fetch = async (url, opts) => {
+  if (['/api/session', '/api/login', '/api/logout'].includes(String(url))) return authApi(String(url), opts);
   if (String(url).startsWith('/api/ledgers')) return ledgerApi(String(url), opts);
   await new Promise((r) => setTimeout(r, 700));
   if (window.__mockAi === 'down') throw new Error('mock: AI down');
@@ -1063,7 +1151,8 @@ window.fetch = async (url, opts) => {
     let res;
     try {
       const r = await fetch('/api/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, today: isoLocal(new Date()) }) });
-      res = r.ok ? await r.json() : { note: r.status === 429 ? 'ขอบ่อยเกินไป รอสักครู่แล้วลองใหม่' : 'เซิร์ฟเวอร์ตอบไม่สำเร็จ' };
+      if (r.status === 401) window.IE.auth.expired((await r.json().catch(() => ({}))).error); // เซสชันหมดอายุ กลับหน้า login
+      res = r.ok ? await r.json() : { note: r.status === 429 ? 'ขอบ่อยเกินไป รอสักครู่แล้วลองใหม่' : r.status === 401 ? 'ต้องใส่รหัสผ่านก่อน' : 'เซิร์ฟเวอร์ตอบไม่สำเร็จ' };
     } catch (e) {
       res = { note: 'ติดต่อเซิร์ฟเวอร์ไม่ได้' };
     }
@@ -1205,6 +1294,7 @@ window.fetch = async (url, opts) => {
       clearTimeout(armed); armed = 0; e.target.textContent = 'ล้างทั้งหมด'; e.target.classList.remove('danger');
       state = defaults(); save(); renderSettings(); renderPlan(); renderTable(); toast('ล้างข้อมูลแล้ว');
     });
+    window.IE.auth.init();
     window.IE.history.init({
       getState: () => state, toast, fmtDate: thDate,
       defaultName: () => `รายการ ${thDate(S().start)} – ${thDate(S().end)}`,
@@ -1221,6 +1311,7 @@ const pick=()=>{if(!document.querySelector('[data-type=coffee][aria-pressed=true
 $('mb-empty').onclick=()=>{try{localStorage.removeItem('iegen.v1')}catch(e){}location.reload();};
 $('mb-gen').onclick=()=>{pick();$('btn-gen').click();};
 $('mb-ai').onclick=()=>{window.__mockAi='up';pick();$('btn-ai').click();};
+$('mb-login').onclick=()=>$('btn-logout').click();
 $('mb-down').onclick=()=>{window.__mockAi='down';pick();$('btn-ai').click();};})();
 </script>
 </body>

@@ -251,7 +251,8 @@
     let res;
     try {
       const r = await fetch('/api/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, today: isoLocal(new Date()) }) });
-      res = r.ok ? await r.json() : { note: r.status === 429 ? 'ขอบ่อยเกินไป รอสักครู่แล้วลองใหม่' : 'เซิร์ฟเวอร์ตอบไม่สำเร็จ' };
+      if (r.status === 401) window.IE.auth.expired((await r.json().catch(() => ({}))).error); // เซสชันหมดอายุ กลับหน้า login
+      res = r.ok ? await r.json() : { note: r.status === 429 ? 'ขอบ่อยเกินไป รอสักครู่แล้วลองใหม่' : r.status === 401 ? 'ต้องใส่รหัสผ่านก่อน' : 'เซิร์ฟเวอร์ตอบไม่สำเร็จ' };
     } catch (e) {
       res = { note: 'ติดต่อเซิร์ฟเวอร์ไม่ได้' };
     }
@@ -393,6 +394,7 @@
       clearTimeout(armed); armed = 0; e.target.textContent = 'ล้างทั้งหมด'; e.target.classList.remove('danger');
       state = defaults(); save(); renderSettings(); renderPlan(); renderTable(); toast('ล้างข้อมูลแล้ว');
     });
+    window.IE.auth.init();
     window.IE.history.init({
       getState: () => state, toast, fmtDate: thDate,
       defaultName: () => `รายการ ${thDate(S().start)} – ${thDate(S().end)}`,

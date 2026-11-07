@@ -20,7 +20,7 @@ let srv, base, logs = [];
 const origLog = console.log, origErr = console.error;
 test.before(async () => {
   await new Promise((r) => mock.listen(0, '127.0.0.1', r));
-  Object.assign(process.env, { RATE_LIMIT_PER_MIN: '1000', TYPHOON_API_KEY: KEY, TYPHOON_BASE_URL: `http://127.0.0.1:${mock.address().port}/v1` });
+  Object.assign(process.env, { IEGEN_LOGIN_USER: '', IEGEN_LOGIN_PASSWORD_HASH: '', IEGEN_SESSION_SECRET: '', RATE_LIMIT_PER_MIN: '1000', TYPHOON_API_KEY: KEY, TYPHOON_BASE_URL: `http://127.0.0.1:${mock.address().port}/v1` });
   delete process.env.TYPHOON_MODEL;
   console.log = (...a) => logs.push(a.join(' ')); console.error = console.log;
   ({ server: srv } = require('./server.js'));

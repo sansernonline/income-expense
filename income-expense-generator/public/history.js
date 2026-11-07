@@ -1,9 +1,6 @@
 /* หน้าต่าง "ประวัติ": บันทึกชุดปัจจุบันลงฐานข้อมูลบนเซิร์ฟเวอร์ · เปิดชุดเก่า · ลบ (เรียก /api/ledgers) */
 (function () {
-  const PASS_KEY = 'iegen.pass';
   const $ = (id) => document.getElementById(id);
-  const getPass = () => { try { return localStorage.getItem(PASS_KEY) || ''; } catch (e) { return ''; } };
-  const setPass = (v) => { try { v ? localStorage.setItem(PASS_KEY, v) : localStorage.removeItem(PASS_KEY); } catch (e) { /* โหมดส่วนตัว */ } };
   const BACKUP = { ok: 'สำรองไป Backblaze แล้ว', failed: 'แต่สำรองไป Backblaze ไม่สำเร็จ (ข้อมูลยังอยู่บนเซิร์ฟเวอร์ จะสำรองอีกครั้งตอนบันทึกครั้งถัดไป)', off: 'ยังไม่ได้ตั้งการสำรองไป Backblaze' };
 
   /** app: { getState, setState, defaultName, toast, fmtDate } */
@@ -11,23 +8,15 @@
     const dlg = $('hist');
 
     async function call(path, opts = {}) {
-      const r = await fetch('/api/ledgers' + path, { ...opts, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getPass() } });
+      const r = await fetch('/api/ledgers' + path, { ...opts, headers: { 'Content-Type': 'application/json' } });
       const body = await r.json().catch(() => ({}));
-      if (r.status === 401) { setPass(''); showLogin(body.error); }
+      if (r.status === 401) { dlg.close(); window.IE.auth.expired(body.error); } // เซสชันหมดอายุ กลับหน้า login
       if (!r.ok) throw Object.assign(new Error(body.error || 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'), { status: r.status });
       return body;
     }
     const note = (msg) => { $('hist-note').textContent = msg || ''; };
 
-    function showLogin(msg) {
-      $('hist-login').hidden = false; $('hist-main').hidden = true;
-      $('hist-login-err').textContent = msg || '';
-      $('hist-pass').focus();
-    }
-
     async function refresh() {
-      if (!getPass()) return showLogin();
-      $('hist-login').hidden = true; $('hist-main').hidden = false;
       try { const { items } = await call(''); render(items); } catch (e) { if (e.status !== 401) note(e.message); }
     }
 
@@ -70,9 +59,6 @@
 
     $('btn-hist').addEventListener('click', () => { note(''); $('hist-name').placeholder = app.defaultName(); dlg.showModal(); refresh(); });
     $('hist-save').addEventListener('click', save);
-    $('hist-login-btn').addEventListener('click', () => { setPass($('hist-pass').value); refresh().then(() => { if (getPass()) $('hist-pass').value = ''; }); });
-    $('hist-pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('hist-login-btn').click(); });
-    $('hist-logout').addEventListener('click', () => { setPass(''); $('hist-pass').value = ''; showLogin(); });
   }
 
   window.IE = Object.assign(window.IE || {}, { history: { init } });

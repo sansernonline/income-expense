@@ -1,5 +1,4 @@
-/* /api/ledgers: บันทึก เปิด ลบ ชุดรายรับรายจ่าย · ต้องใส่รหัสผ่าน (APP_PASSWORD) · สำรองไฟล์ไป B2 ทุกครั้งที่ข้อมูลเปลี่ยน */
-const crypto = require('node:crypto');
+/* /api/ledgers: บันทึก เปิด ลบ ชุดรายรับรายจ่าย · ต้อง login (server/auth.js) · สำรองไฟล์ไป B2 ทุกครั้งที่ข้อมูลเปลี่ยน */
 const fs = require('node:fs');
 const path = require('node:path');
 const { openStore } = require('./store.js');
@@ -7,18 +6,12 @@ const b2 = require('./b2.js');
 
 const MAX_BODY = 2 * 1024 * 1024; // 366 วัน วันละหลายรายการยังห่างเพดานนี้มาก
 const MAX_ROWS = 20000;
-const FAIL_MAX = 10; // รหัสผิดได้กี่ครั้งต่อ IP ใน 15 นาที
-const FAIL_WINDOW = 15 * 60 * 1000;
-// เพดานรวมทุก IP: IP มาจาก X-Forwarded-For ซึ่งผู้ส่งปลอมได้ เปลี่ยน IP ไปเรื่อย ๆ ก็ยังเดารหัสได้ไม่เกินนี้ (แลกกับเจ้าของอาจถูกล็อกด้วย 15 นาที)
-const FAIL_MAX_ALL = 50;
 
-const digest = (s) => crypto.createHash('sha256').update(String(s)).digest();
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
-function createHistory({ dataDir, password, b2cfg, log = console.error }) {
+/** auth: จาก createAuth (server/auth.js) · ใช้แค่ auth.enabled กับ auth.check(req) */
+function createHistory({ dataDir, auth, b2cfg, log = console.error }) {
   const file = path.join(dataDir, 'iegen.sqlite');
-  const want = password ? digest(password) : null;
-  const fails = new Map();
 
   // เปิดฐานข้อมูลครั้งแรกที่มีคนใช้ · ไม่มีไฟล์ในเครื่อง (เช่น Render เพิ่งรีสตาร์ต) ดึงจาก B2 ก่อน
   // ดึงไม่สำเร็จจะไม่เปิดฐานว่าง เพราะบันทึกครั้งต่อไปจะส่งฐานว่างไปทับไฟล์ล่าสุดบน B2
@@ -37,19 +30,6 @@ function createHistory({ dataDir, password, b2cfg, log = console.error }) {
     return chain;
   };
 
-  function checkAuth(req, ip, now = Date.now()) {
-    if (!want) return { status: 503, body: { error: 'ยังไม่ได้เปิดใช้ประวัติ ตั้ง APP_PASSWORD ที่เซิร์ฟเวอร์ก่อน' } };
-    for (const [k, v] of fails) if (now - v[v.length - 1] >= FAIL_WINDOW) fails.delete(k); // ไม่ให้ Map โตไม่หยุด
-    const recent = fails.get(ip) || [];
-    let total = 0;
-    for (const v of fails.values()) total += v.filter((t) => now - t < FAIL_WINDOW).length;
-    if (recent.filter((t) => now - t < FAIL_WINDOW).length >= FAIL_MAX || total >= FAIL_MAX_ALL) return { status: 429, body: { error: 'ใส่รหัสผิดหลายครั้ง รอ 15 นาทีแล้วลองใหม่' } };
-    const m = String(req.headers.authorization || '').match(/^Bearer (.+)$/);
-    if (m && crypto.timingSafeEqual(digest(m[1]), want)) return null;
-    fails.set(ip, [...recent.filter((t) => now - t < FAIL_WINDOW), now]);
-    return { status: 401, body: { error: 'รหัสผ่านไม่ถูกต้อง' } };
-  }
-
   /** ตรวจของที่จะบันทึก · คืนข้อความ error หรือ null */
   function invalid(body) {
     if (!isObj(body) || typeof body.name !== 'string' || !isObj(body.data)) return 'ข้อมูลที่ส่งมาไม่ถูกต้อง';
@@ -63,11 +43,11 @@ function createHistory({ dataDir, password, b2cfg, log = console.error }) {
   }
 
   /** คืน { status, body } · url ไม่ใช่ /api/ledgers คืน null · readBody(limit) อ่านเนื้อคำขอ */
-  async function handle(req, url, ip, readBody) {
+  async function handle(req, url, readBody) {
     const m = url.pathname.match(/^\/api\/ledgers(?:\/(\d{1,12}))?\/?$/);
     if (!m) return url.pathname.startsWith('/api/ledgers') ? { status: 404, body: { error: 'ไม่พบ' } } : null;
-    const denied = checkAuth(req, ip);
-    if (denied) return denied;
+    if (!auth.enabled) return { status: 503, body: { error: 'ยังไม่ได้เปิดใช้ประวัติ ตั้งค่า login ที่เซิร์ฟเวอร์ก่อน' } };
+    if (!auth.check(req)) return { status: 401, body: { error: 'ต้องเข้าสู่ระบบก่อน' } };
     let store;
     try { store = await open(); } catch (err) {
       log('เปิดฐานข้อมูลไม่ได้: ' + err.message);

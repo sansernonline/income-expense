@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { requestPlan } = require('./typhoon.js');
 const { createHistory } = require('./history.js');
+const { createAuth, loadAuthConfig } = require('./auth.js');
 const { b2Config } = require('./b2.js');
 
 // อ่าน .env ด้วยตัวเอง (ไม่ใช้แพ็กเกจ) ค่าที่ตั้งใน environment ชนะไฟล์
@@ -27,11 +28,13 @@ const RATE_MAX = Number(process.env.RATE_LIMIT_PER_MIN) || 10; // กันค�
 const MAX_BODY = 10 * 1024;
 const PUBLIC = path.join(__dirname, '..', 'public');
 // ประวัติ: SQLite ใน DATA_DIR · สำรองไป B2 เมื่อตั้งค่า B2_* ครบ (ตั้งไม่ครบ = หยุดตั้งแต่เริ่ม ไม่เงียบ)
-const history = createHistory({ dataDir: process.env.DATA_DIR || path.join(__dirname, '..', 'data'), password: process.env.APP_PASSWORD || '', b2cfg: b2Config() });
+// login: ไม่ตั้ง IEGEN_LOGIN_* เลย = ไม่มี login (ประวัติปิด) · ตั้งไม่ครบ = หยุดตั้งแต่เริ่ม ไม่เงียบ
+const auth = createAuth(loadAuthConfig(process.env));
+const history = createHistory({ dataDir: process.env.DATA_DIR || path.join(__dirname, '..', 'data'), auth, b2cfg: b2Config() });
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml' };
 
-const send = (res, code, body, type = 'application/json; charset=utf-8') => {
-  res.writeHead(code, { 'Content-Type': type, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store' });
+const send = (res, code, body, type = 'application/json; charset=utf-8', extra = {}) => {
+  res.writeHead(code, { 'Content-Type': type, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store', ...extra });
   res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body));
 };
 
@@ -59,6 +62,8 @@ const sameOrigin = (req) => {
 
 /** จำกัดจำนวนคำขอ /api/plan ต่อ IP ต่อนาที · หลัง proxy ใช้ IP ตัวแรกของ X-Forwarded-For เมื่อ TRUST_PROXY=1 */
 const hits = new Map();
+/** ผู้ใช้เข้าทาง https (ตรงหรือผ่าน proxy ที่เชื่อถือ) → คุกกี้ใส่ Secure */
+const isHttps = (req) => Boolean(req.socket.encrypted) || (process.env.TRUST_PROXY === '1' && req.headers['x-forwarded-proto'] === 'https');
 const clientIp = (req) => (process.env.TRUST_PROXY === '1' && String(req.headers['x-forwarded-for'] || '').split(',')[0].trim()) || req.socket.remoteAddress || '';
 function rateLimited(req, now = Date.now()) {
   const ip = clientIp(req), recent = (hits.get(ip) || []).filter((t) => now - t < 60000);
@@ -70,8 +75,25 @@ function rateLimited(req, now = Date.now()) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   if (req.method === 'GET' && url.pathname === '/healthz') return send(res, 200, { ok: true });
+  if (req.method === 'GET' && url.pathname === '/api/session') {
+    if (!sameOrigin(req)) return send(res, 403, { error: 'ไม่อนุญาตคำขอจากเว็บอื่น' });
+    const r = auth.session(req);
+    return send(res, r.status, r.body);
+  }
+  if (req.method === 'POST' && url.pathname === '/api/login') {
+    if (!sameOrigin(req)) return send(res, 403, { error: 'ไม่อนุญาตคำขอจากเว็บอื่น' });
+    let input;
+    try { input = JSON.parse((await readBody(req, 4096)) || '{}'); } catch (err) { return send(res, err.code === 413 ? 413 : 400, { error: 'ข้อมูลที่ส่งมาไม่ถูกต้อง' }); }
+    const r = await auth.login(clientIp(req), input, isHttps(req));
+    return send(res, r.status, r.body, undefined, r.cookie ? { 'Set-Cookie': r.cookie } : {});
+  }
+  if (req.method === 'POST' && url.pathname === '/api/logout') {
+    if (!sameOrigin(req)) return send(res, 403, { error: 'ไม่อนุญาตคำขอจากเว็บอื่น' });
+    return send(res, 200, { ok: true }, undefined, { 'Set-Cookie': auth.logoutCookie });
+  }
   if (req.method === 'POST' && url.pathname === '/api/plan') {
     if (!sameOrigin(req)) return send(res, 403, { error: 'ไม่อนุญาตคำขอจากเว็บอื่น' });
+    if (!auth.allows(req)) return send(res, 401, { error: 'ต้องเข้าสู่ระบบก่อน' }); // กันคนนอกใช้โควตา Typhoon
     if (rateLimited(req)) return send(res, 429, { error: 'ขอบ่อยเกินไป รอสักครู่แล้วลองใหม่' });
     try {
       const body = JSON.parse((await readBody(req)) || '{}');
@@ -88,7 +110,7 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname.startsWith('/api/ledgers')) {
     if (!sameOrigin(req)) return send(res, 403, { error: 'ไม่อนุญาตคำขอจากเว็บอื่น' });
     try {
-      const r = await history.handle(req, url, clientIp(req), (limit) => readBody(req, limit));
+      const r = await history.handle(req, url, (limit) => readBody(req, limit));
       return send(res, r.status, r.body);
     } catch (err) {
       if (err.code === 413) { res.once('finish', () => req.destroy()); return send(res, 413, { error: 'ข้อมูลใหญ่เกินไป' }); }
@@ -109,7 +131,7 @@ const server = http.createServer(async (req, res) => {
 const start = (port = PORT, onListen) => server.listen(port, HOST, onListen);
 
 if (require.main === module) {
-  start(PORT, () => console.log(`IEGEN เปิดที่ http://${HOST}:${PORT} · Typhoon: ${cfg.apiKey ? 'ตั้งคีย์แล้ว' : 'ยังไม่ตั้งคีย์ (AI ใช้ไม่ได้ คงหมวดเดิม)'} · ประวัติ: ${process.env.APP_PASSWORD ? 'เปิด' : 'ปิด (ยังไม่ตั้ง APP_PASSWORD)'} · สำรอง B2: ${b2Config() ? 'เปิด' : 'ปิด'}`));
+  start(PORT, () => console.log(`IEGEN เปิดที่ http://${HOST}:${PORT} · Typhoon: ${cfg.apiKey ? 'ตั้งคีย์แล้ว' : 'ยังไม่ตั้งคีย์ (AI ใช้ไม่ได้ คงหมวดเดิม)'} · login: ${auth.enabled ? 'เปิด' : 'ปิด (ยังไม่ตั้ง IEGEN_LOGIN_*) · ประวัติ: ปิด'} · สำรอง B2: ${b2Config() ? 'เปิด' : 'ปิด'}`));
   // Render ส่ง SIGTERM ก่อนปิดเครื่อง: รอการสำรองที่ค้างให้จบก่อน
   process.once('SIGTERM', () => server.close(() => history.close().finally(() => process.exit(0))));
 }
