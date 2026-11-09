@@ -1,6 +1,6 @@
 /* หน้าจอ IEGEN: ตาราง (ซ้าย) + แผงตั้งค่า (ขวา) + ส่งออก Excel (ตรรกะอยู่ใน ledger.js / plan.js / presets.js) */
 (function () {
-  const { generate, sortRows, balances, totals, toMoney, monthsIn, dayCount, eachDay, weekday, MAX_DAYS, FALLBACK_PLAN, sanitizePlan, sanitizeSettings, LIMITS, PRESETS } = window.IE;
+  const { generate, sortRows, moveRow, balances, totals, toMoney, monthsIn, dayCount, eachDay, weekday, MAX_DAYS, FALLBACK_PLAN, sanitizePlan, sanitizeSettings, LIMITS, PRESETS } = window.IE;
   const $ = (id) => document.getElementById(id);
   const KEY = 'iegen.v1';
   const OTHER = 'other';
@@ -299,7 +299,8 @@
     const body = $('rows'); body.textContent = '';
     for (const r of state.rows) {
       const tr = document.createElement('tr'); tr.dataset.id = r.id;
-      tr.innerHTML = '<td><input type="date" data-f="date" aria-label="วันที่"></td><td><input type="text" data-f="name" maxlength="60" aria-label="รายการ"></td>' +
+      tr.innerHTML = '<td class="g"><button class="grip" type="button" aria-label="ลากเพื่อย้ายแถว หรือกดลูกศรขึ้น/ลง" title="ลากเพื่อย้าย · วันที่จะเปลี่ยนตามแถวด้านบน"><svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="4.5" cy="3" r="1.3"/><circle cx="9.5" cy="3" r="1.3"/><circle cx="4.5" cy="7" r="1.3"/><circle cx="9.5" cy="7" r="1.3"/><circle cx="4.5" cy="11" r="1.3"/><circle cx="9.5" cy="11" r="1.3"/></svg></button></td>' +
+        '<td><input type="date" data-f="date" aria-label="วันที่"></td><td><input type="text" data-f="name" maxlength="60" aria-label="รายการ"></td>' +
         '<td><input type="text" class="num" inputmode="decimal" data-f="income" aria-label="รายรับ"></td><td><input type="text" class="num" inputmode="decimal" data-f="expense" aria-label="รายจ่าย"></td>' +
         '<td class="bal"></td><td class="x"><button class="del" type="button" aria-label="ลบรายการนี้">×</button></td>';
       tr.querySelector('[data-f=date]').value = r.date; tr.querySelector('[data-f=name]').value = r.name;
@@ -341,7 +342,54 @@
       const last = [...$('rows').querySelectorAll('[data-f=name]')].pop(); last.focus(); last.select();
     });
     $('btn-regen').addEventListener('click', () => { if (generateNow(true)) toast(S().seed !== '' ? 'ล็อกผลสุ่มอยู่ ผลจึงเหมือนเดิม · ล้างช่อง “ล็อกผลสุ่ม” เพื่อสุ่มใหม่' : 'สุ่มรายการใหม่แล้ว'); });
+    bindDrag();
     $('btn-undo').addEventListener('click', () => { if (!state.prevRows) return; state.rows = state.prevRows; state.prevRows = null; save(); renderTable(); toast('ย้อนกลับแล้ว'); });
+  }
+
+  /* ---------- ลากย้ายแถว (เมาส์ นิ้ว และลูกศรขึ้น/ลงบนปุ่มจับ) ---------- */
+  function placeRow(from, to) {
+    if (to === from || to < 0 || to >= state.rows.length) return;
+    const before = state.rows[from].date;
+    state.rows = moveRow(state.rows, from, to); save(); renderTable();
+    const moved = state.rows[to];
+    $('rows').children[to].querySelector('.grip').focus();
+    if (moved.date !== before) toast(`ย้ายแล้ว · วันที่เปลี่ยนเป็น ${thDate(moved.date)}`);
+  }
+  function bindDrag() {
+    const body = $('rows'), wrap = body.closest('.tablewrap');
+    let drag = null;
+    const clearMarks = () => body.querySelectorAll('.drop-before,.drop-after').forEach((tr) => tr.classList.remove('drop-before', 'drop-after'));
+    /** แถวแรกที่จุดกึ่งกลางอยู่ต่ำกว่าเคอร์เซอร์ = แทรกก่อนแถวนั้น · ไม่มี = ต่อท้าย */
+    const slotAt = (y) => { const trs = [...body.children]; const i = trs.findIndex((tr) => { const b = tr.getBoundingClientRect(); return y < b.top + b.height / 2; }); return i < 0 ? trs.length : i; };
+    body.addEventListener('pointerdown', (e) => {
+      const g = e.target.closest('.grip'); if (!g || e.button !== 0) return;
+      e.preventDefault(); // กันเลือกข้อความ แต่ทำให้ช่องที่กำลังพิมพ์ไม่เสียโฟกัสเอง → blur ให้ค่าที่พิมพ์ค้างถูกบันทึกก่อนย้าย
+      if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+      if (!g.isConnected) return; // แก้วันที่ค้างไว้ ตารางวาดใหม่แล้ว ปุ่มจับเดิมหายไป
+      g.setPointerCapture(e.pointerId);
+      const tr = g.closest('tr'); drag = { tr, from: [...body.children].indexOf(tr), slot: null };
+      tr.classList.add('dragging'); document.body.classList.add('is-dragging');
+    });
+    body.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const w = wrap.getBoundingClientRect(); // ลากชิดขอบบน/ล่างแล้วเลื่อนตารางตาม
+      if (e.clientY < w.top + 40) wrap.scrollTop -= 12; else if (e.clientY > w.bottom - 40) wrap.scrollTop += 12;
+      const slot = slotAt(e.clientY), trs = body.children; clearMarks();
+      drag.slot = slot === drag.from || slot === drag.from + 1 ? null : slot; // วางที่เดิม ไม่ต้องแสดงเส้น
+      if (drag.slot === null) return;
+      if (slot < trs.length) trs[slot].classList.add('drop-before'); else trs[trs.length - 1].classList.add('drop-after');
+    });
+    const end = () => {
+      if (!drag) return; const { tr, from, slot } = drag; drag = null;
+      tr.classList.remove('dragging'); document.body.classList.remove('is-dragging'); clearMarks();
+      if (slot !== null) placeRow(from, slot > from ? slot - 1 : slot);
+    };
+    body.addEventListener('pointerup', end); body.addEventListener('pointercancel', end);
+    body.addEventListener('keydown', (e) => {
+      if (!e.target.closest('.grip') || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+      e.preventDefault(); const from = [...body.children].indexOf(e.target.closest('tr'));
+      placeRow(from, from + (e.key === 'ArrowUp' ? -1 : 1));
+    });
   }
 
   /* ---------- ส่งออก Excel ---------- */
@@ -379,12 +427,8 @@
     document.querySelector('.app').dataset.view = v;
     document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.tab === v));
   }
-  function setTheme(t) { document.documentElement.dataset.theme = t; $('btn-theme').textContent = t === 'dark' ? 'โหมดสว่าง' : 'โหมดมืด'; try { localStorage.setItem('iegen.theme', t); } catch (e) { /* ข้าม */ } }
 
   function init() {
-    let theme = 'light'; try { theme = localStorage.getItem('iegen.theme') || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light'); } catch (e) { /* ข้าม */ }
-    setTheme(theme);
-    $('btn-theme').addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
     document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
     $('btn-gen').addEventListener('click', generateNow); $('btn-ai').addEventListener('click', askAi);
     $('btn-export').addEventListener('click', exportXlsx);

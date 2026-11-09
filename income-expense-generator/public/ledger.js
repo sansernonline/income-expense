@@ -145,6 +145,15 @@
   const sortRows = (rows) =>
     rows.map((r, i) => [r, i]).sort((a, b) => a[0].date.localeCompare(b[0].date) || a[1] - b[1]).map((x) => x[0]);
 
+  /** ย้ายแถวที่ from ไปวางที่ตำแหน่ง to (นับหลังดึงแถวออกแล้ว) · วันที่เปลี่ยนเป็นวันของแถวบนที่วางแทรก ไม่มีแถวบนใช้แถวล่าง → ตารางยังเรียงตามวันที่ */
+  function moveRow(rows, from, to) {
+    const out = rows.slice();
+    const [row] = out.splice(from, 1);
+    const ref = out[to - 1] || out[to];
+    out.splice(to, 0, ref ? { ...row, date: ref.date } : row);
+    return out;
+  }
+
   /** คืนยอดคงเหลือทีละแถว (FR-TBL-030) */
   function balances(rows, opening = 0) {
     let bal = Number(opening) || 0;
@@ -163,5 +172,5 @@
     return Number.isFinite(n) && n > 0 ? round2(n) : 0;
   };
 
-  return { MAX_DAYS, seeded, eachDay, weekday, monthsIn, dayCount, split, generate, sortRows, balances, totals, toMoney, round2 };
+  return { MAX_DAYS, seeded, eachDay, weekday, monthsIn, dayCount, split, generate, sortRows, moveRow, balances, totals, toMoney, round2 };
 });

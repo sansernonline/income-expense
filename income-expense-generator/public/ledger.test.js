@@ -169,3 +169,13 @@ test('% รายจ่าย 0 ใช้ได้จริง (ไม่ถู�
   const total = FALLBACK_PLAN.expenses.reduce((a, e) => a + e.pct, 0);
   assert.ok(total >= 65 && total <= 90, String(total));
 });
+
+test('ลากย้ายแถว: วันที่ตามแถวบนที่วางแทรก · วางบนสุดใช้วันของแถวล่าง · แถวเดิมไม่ถูกแก้', () => {
+  const rows = [{ id: 1, date: '2026-03-01' }, { id: 2, date: '2026-03-02' }, { id: 3, date: '2026-03-05' }, { id: 4, date: '2026-03-09' }];
+  const down = L.moveRow(rows, 0, 2); // id 1 ไปอยู่ใต้ id 3
+  assert.deepEqual(down.map((r) => [r.id, r.date]), [[2, '2026-03-02'], [3, '2026-03-05'], [1, '2026-03-05'], [4, '2026-03-09']]);
+  const top = L.moveRow(rows, 3, 0); // id 4 ขึ้นบนสุด
+  assert.deepEqual(top.map((r) => [r.id, r.date]), [[4, '2026-03-01'], [1, '2026-03-01'], [2, '2026-03-02'], [3, '2026-03-05']]);
+  assert.deepEqual(L.sortRows(down).map((r) => r.id), down.map((r) => r.id), 'ยังเรียงตามวันที่');
+  assert.equal(rows[0].date, '2026-03-01');
+});

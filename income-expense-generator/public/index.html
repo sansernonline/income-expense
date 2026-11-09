@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="th" data-theme="light">
+<html lang="th">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -15,8 +15,7 @@
   <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM4 10h16M12 10v9"/></svg><b>Income &amp; Expense</b><span class="sub">สร้างรายรับรายจ่ายจำลอง</span></div>
   <div class="top-actions">
     <button class="btn ghost" id="btn-clear" type="button">ล้างทั้งหมด</button>
-    <button class="btn ghost" id="btn-theme" type="button" aria-label="สลับโหมดสว่าง/มืด">โหมดมืด</button>
-    <button class="btn ghost" id="btn-logout" type="button" hidden>ออกจากระบบ</button>
+    <button class="btn ghost" id="btn-logout" type="button" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 8l-4 4 4 4M6 12h10"/></svg>ออกจากระบบ</button>
   </div>
 </header>
 
@@ -33,13 +32,13 @@
       <button class="btn" id="btn-undo" type="button">ย้อนกลับ</button>
       <button class="btn" id="btn-add" type="button">เพิ่มรายการ</button>
       <span class="grow"></span>
-      <button class="btn" id="btn-hist" type="button">ประวัติ</button>
-      <button class="btn" id="btn-export" type="button">ส่งออก Excel</button>
+      <button class="btn" id="btn-hist" type="button" title="บันทึกชุดนี้ไว้ หรือเปิดชุดที่บันทึกไว้"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>บันทึก / เปิด</button>
+      <button class="btn" id="btn-export" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>ส่งออก Excel</button>
     </div>
 
     <div class="tablewrap">
       <table id="tbl">
-        <thead><tr><th>วันที่<small>วัน-เดือน-ปี</small></th><th>รายการ<small>ชื่อ แก้ได้</small></th><th class="r">รายรับ<small>เงินเข้า (บาท)</small></th><th class="r">รายจ่าย<small>เงินออก (บาท)</small></th><th class="r">คงเหลือ<small>เงินสะสม (บาท)</small></th><th class="x"><span class="sr">ลบ</span></th></tr></thead>
+        <thead><tr><th class="g"><span class="sr">ลากเพื่อย้าย</span></th><th>วันที่<small>วัน-เดือน-ปี</small></th><th>รายการ<small>ชื่อ แก้ได้</small></th><th class="r">รายรับ<small>เงินเข้า (บาท)</small></th><th class="r">รายจ่าย<small>เงินออก (บาท)</small></th><th class="r">คงเหลือ<small>เงินสะสม (บาท)</small></th><th class="x"><span class="sr">ลบ</span></th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
       <div class="empty" id="empty">
@@ -135,7 +134,7 @@
 </main>
 
 <dialog class="hist" id="hist" aria-labelledby="hist-h">
-  <form method="dialog" class="hist-head"><h2 id="hist-h">ประวัติที่บันทึก</h2><button class="btn ghost" value="close">ปิด</button></form>
+  <form method="dialog" class="hist-head"><h2 id="hist-h">บันทึก / เปิดชุดรายการ</h2><button class="btn ghost" value="close">ปิด</button></form>
   <div id="hist-main">
     <div class="addrow"><input id="hist-name" type="text" maxlength="100" aria-label="ชื่อชุดที่จะบันทึก"><button class="btn primary" id="hist-save" type="button">บันทึกชุดนี้</button></div>
     <p class="lbl sm" id="hist-note" role="status"></p>

@@ -18,7 +18,7 @@ const sum4 = async (page) => Promise.all(['#s-in', '#s-out', '#s-bal', '#s-n'].m
 
 test('FR_TBL_010 · FR_TBL_100 · TC-TBL-001/026/027: ตาราง 5 คอลัมน์เรียงตามลำดับ มีคำอธิบายใต้ชื่อ · หัวรายการหมวดมีแถวเดียวต่อรายการ ไม่ซ้ำเมื่อเพิ่มหมวด คำอธิบายอยู่หลังรีโหลด', o, async () => {
   const page = await open({ state: T3 });
-  const th = await page.$$eval('#tbl thead th:not(.x)', (els) => els.map((e) => [e.firstChild.textContent.trim(), e.querySelector('small').textContent]));
+  const th = await page.$$eval('#tbl thead th:not(.x):not(.g)', (els) => els.map((e) => [e.firstChild.textContent.trim(), e.querySelector('small').textContent]));
   assert.deepEqual(th, [['วันที่', 'วัน-เดือน-ปี'], ['รายการ', 'ชื่อ แก้ได้'], ['รายรับ', 'เงินเข้า (บาท)'], ['รายจ่าย', 'เงินออก (บาท)'], ['คงเหลือ', 'เงินสะสม (บาท)']]);
   const head = (sel) => page.$$eval(`${sel} .prow.head > span`, (els) => els.map((e) => e.textContent));
   assert.deepEqual((await head('#rev-list')).slice(0, 2), ['ชื่อหมวดรายรับมาจากอะไร', 'สัดส่วนเทียบกัน']);
@@ -361,21 +361,115 @@ test('NFR_USE_010 · TC-USE-002/003/011/012/013 · TC-GEN-046: มือถื�
   assert.ok(sideBox.width >= 380 && sideBox.width <= 430, String(sideBox.width));
   assert.ok(btnBox.x >= sideBox.x, '"สร้างรายการ" อยู่ในแผงตั้งค่า');
   const barBtns = await d.$$eval('.bar .btn', (els) => els.map((e) => e.textContent));
-  assert.deepEqual(barBtns, ['สุ่มใหม่', 'ย้อนกลับ', 'เพิ่มรายการ', 'ประวัติ', 'ส่งออก Excel']);
+  assert.deepEqual(barBtns, ['สุ่มใหม่', 'ย้อนกลับ', 'เพิ่มรายการ', 'บันทึก / เปิด', 'ส่งออก Excel']);
   await K.closeAll(d);
 });
 
-test('NFR_USE_010 · TC-USE-005/006: โหมดสว่าง/มืด สลับได้ ธีมคงอยู่หลังรีโหลด · ข้อความในหน้าเป็นภาษาไทย', o, async () => {
+test('NFR_USE_010 · TC-USE-005/006/007: ไม่มีปุ่มโหมดมืด หน้าเป็นธีมสว่างเสมอ (แม้เครื่องตั้งโหมดมืด) · ข้อความในหน้าเป็นภาษาไทย', o, async () => {
   const page = await open();
-  const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  const light = await bg();
-  await page.locator('#btn-theme').click();
-  assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'dark');
-  assert.notEqual(await bg(), light);
+  await page.emulateMedia({ colorScheme: 'dark' });
   await page.reload();
-  assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'dark');
+  assert.equal(await page.locator('#btn-theme').count(), 0);
+  assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.panel')).backgroundColor), 'rgb(255, 255, 255)');
   const text = await page.evaluate(() => document.body.innerText);
-  assert.ok(/ประเภทธุรกิจ/.test(text) && /สร้างรายการ/.test(text));
+  assert.ok(/ประเภทธุรกิจ/.test(text) && /สร้างรายการ/.test(text) && !/โหมดมืด/.test(text));
+  await K.closeAll(page);
+});
+
+test('NFR_USE_010 · TC-USE-015/016: hover ปุ่มบนหัวแอปและแถบเครื่องมือ พื้นเข้มกว่าพื้นหลังเล็กน้อย แล้วกลับเดิม · 3 ปุ่มมีไอคอนที่ซ่อนจากโปรแกรมอ่านจอ · "บันทึก / เปิด" เปิดหน้าต่างชื่อเดียวกัน', o, async () => {
+  const page = await open({ state: T3 });
+  await page.evaluate(() => { document.getElementById('btn-logout').hidden = false; }); // ชุดนี้ไม่ได้ตั้ง login จึงเปิดปุ่มให้เห็นเพื่อดูสี
+  /** ความสว่างที่ตาเห็นของปุ่ม (ผลรวม RGB): พื้นโปร่งแสงผสมกับพื้นหลังจริงด้านหลัง */
+  const seen = (sel) => page.$eval(sel, (el) => {
+    const parse = (c) => { const v = (c.match(/[\d.]+/g) || []).map(Number); return v.length === 3 ? [...v, 1] : v.length ? v : [0, 0, 0, 0]; };
+    const [r, g, b, a] = parse(getComputedStyle(el).backgroundColor);
+    let p = el.parentElement; while (p && parse(getComputedStyle(p).backgroundColor)[3] === 0) p = p.parentElement;
+    const [R, G, B] = p ? parse(getComputedStyle(p).backgroundColor) : [237, 237, 242];
+    return R + (r - R) * a + G + (g - G) * a + B + (b - B) * a;
+  });
+  for (const sel of ['#btn-clear', '#btn-logout', '#btn-regen', '#btn-add', '#btn-hist', '#btn-export']) {
+    const before = await seen(sel);
+    await page.hover(sel);
+    await page.waitForTimeout(200);
+    const after = await seen(sel);
+    assert.ok(after < before && before - after < 60, `${sel} ${before} → ${after}`);
+    await page.mouse.move(5, 400);
+    await page.waitForTimeout(200);
+    assert.equal(await seen(sel), before, `${sel} กลับสีเดิม`);
+  }
+  for (const [sel, name] of [['#btn-logout', 'ออกจากระบบ'], ['#btn-hist', 'บันทึก / เปิด'], ['#btn-export', 'ส่งออก Excel']]) {
+    assert.equal(await page.locator(`${sel} svg.ico[aria-hidden=true]`).count(), 1, sel);
+    assert.equal(await page.getByRole('button', { name, exact: true }).count(), 1, name);
+  }
+  await page.locator('#btn-hist').click();
+  assert.equal(await page.locator('#hist-h').innerText(), 'บันทึก / เปิดชุดรายการ');
+  await K.closeAll(page);
+});
+
+/** ลากปุ่มจับของแถว from ไปที่ความสูง y (ยังไม่ปล่อย) */
+const dragTo = async (page, from, y) => {
+  const g = await row(page, from).locator('.grip').boundingBox();
+  await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(g.x + g.width / 2, y, { steps: 8 });
+};
+const order = async (page) => (await table(page)).map((r) => [r.name, r.date]);
+
+test('FR_TBL_020 · TC-TBL-029: ลากแถว A ไปใต้ C → B · C · A วันที่ A เป็นของ C คงเหลือ 800 · 1,100 · 1,600 สรุปไม่เปลี่ยน อยู่หลังรีโหลด', o, async () => {
+  const page = await open({ state: T3 });
+  const c = await row(page, 2).boundingBox();
+  await dragTo(page, 0, c.y + c.height - 4);
+  assert.equal(await page.locator('#rows tr.drop-after').count(), 1, 'มีเส้นบอกที่วางใต้ C');
+  assert.equal(await page.locator('#rows tr.dragging').count(), 1, 'แถวที่ลากจางลง');
+  await page.mouse.up();
+  assert.deepEqual(await order(page), [['B', '2026-03-03'], ['C', '2026-03-04'], ['A', '2026-03-04']]);
+  assert.match(await toast(page), /04\/03\/2569/);
+  assert.deepEqual(await bals(page), [800, 1100, 1600]);
+  assert.deepEqual(await sum4(page), ['800.00', '200.00', '1,600.00', '3']);
+  await page.reload();
+  assert.deepEqual(await order(page), [['B', '2026-03-03'], ['C', '2026-03-04'], ['A', '2026-03-04']]);
+  await K.closeAll(page);
+});
+
+test('FR_TBL_020 · TC-TBL-030: ลาก C ไปบนสุด → C · A · B วันที่ C เป็นของ A (แถวล่าง) คงเหลือ 1,300 · 1,800 · 1,600', o, async () => {
+  const page = await open({ state: T3 });
+  const top = await row(page, 0).boundingBox();
+  await dragTo(page, 2, top.y + 4);
+  assert.equal(await page.locator('#rows tr:first-child.drop-before').count(), 1, 'เส้นอยู่เหนือ A');
+  await page.mouse.up();
+  assert.deepEqual(await order(page), [['C', '2026-03-02'], ['A', '2026-03-02'], ['B', '2026-03-03']]);
+  assert.deepEqual(await bals(page), [1300, 1800, 1600]);
+  await K.closeAll(page);
+});
+
+test('NFR_USE_010 · TC-TBL-031: ลูกศรลงบนปุ่มจับ A → B · A · C วันที่ A เป็นของ B โฟกัสตามแถว · ลูกศรขึ้นกลับบนสุด · บนสุดกดขึ้นไม่เปลี่ยน', o, async () => {
+  const page = await open({ state: T3 });
+  await row(page, 0).locator('.grip').focus();
+  await page.keyboard.press('ArrowDown');
+  assert.deepEqual(await order(page), [['B', '2026-03-03'], ['A', '2026-03-03'], ['C', '2026-03-04']]);
+  assert.deepEqual(await bals(page), [800, 1300, 1600]);
+  assert.equal(await page.evaluate(() => document.activeElement.closest('tr').querySelector('[data-f=name]').value), 'A', 'โฟกัสอยู่ที่ปุ่มจับของ A');
+  await page.keyboard.press('ArrowUp');
+  assert.deepEqual(await order(page), [['A', '2026-03-03'], ['B', '2026-03-03'], ['C', '2026-03-04']]);
+  await page.keyboard.press('ArrowUp');
+  assert.deepEqual(await order(page), [['A', '2026-03-03'], ['B', '2026-03-03'], ['C', '2026-03-04']]);
+  await K.closeAll(page);
+});
+
+test('FR_TBL_040 · TC-TBL-032: พิมพ์ชื่อค้างแล้วลากทันที ชื่อไม่หาย · คลิกปุ่มจับเฉย ๆ ไม่ย้าย · ลากแล้วปล่อยที่เดิมไม่ย้าย ไม่มีเส้น', o, async () => {
+  const page = await open({ state: T3 });
+  await row(page, 2).locator('[data-f=name]').fill('C แก้แล้ว'); // ยังไม่ออกจากช่อง จึงยังไม่เกิด change
+  const top = await row(page, 0).boundingBox();
+  await dragTo(page, 2, top.y + 4);
+  await page.mouse.up();
+  assert.deepEqual(await order(page), [['C แก้แล้ว', '2026-03-02'], ['A', '2026-03-02'], ['B', '2026-03-03']]);
+  await row(page, 1).locator('.grip').click();
+  assert.deepEqual(await order(page), [['C แก้แล้ว', '2026-03-02'], ['A', '2026-03-02'], ['B', '2026-03-03']]);
+  const mid = await row(page, 1).boundingBox();
+  await dragTo(page, 1, mid.y + mid.height / 2 + 6);
+  assert.equal(await page.locator('#rows .drop-before, #rows .drop-after').count(), 0, 'วางที่เดิมไม่แสดงเส้น');
+  await page.mouse.up();
+  assert.deepEqual(await order(page), [['C แก้แล้ว', '2026-03-02'], ['A', '2026-03-02'], ['B', '2026-03-03']]);
   await K.closeAll(page);
 });
 
@@ -400,11 +494,10 @@ test('NFR_REL_010 · TC-REL-004/005: ออฟไลน์หลังโหล�
   await K.closeAll(p);
 });
 
-test('NFR_PERF_020 · TC-PERF-005: ระหว่างรอ AI ปุ่มแสดงสถานะ กดซ้ำไม่ได้ และหน้ายังตอบสนอง (แท็บ ธีม แก้ตาราง ใช้ได้)', o, async () => {
+test('NFR_PERF_020 · TC-PERF-005: ระหว่างรอ AI ปุ่มแสดงสถานะ กดซ้ำไม่ได้ และหน้ายังตอบสนอง (แท็บ แก้ตาราง ใช้ได้)', o, async () => {
   const page = await open({ state: { ...A, settings: { type: 'other', biz: 'ร้านทดสอบ' }, rows: T3.rows, nextId: 4 }, ai: async (route) => { await new Promise((r) => setTimeout(r, 1500)); await K.aiOk(planA)(route); } });
   await page.locator('#btn-ai').click();
   assert.match(await page.locator('#btn-ai').innerText(), /กำลัง/);
-  await page.locator('#btn-theme').click();
   await edit(page, 1, 'expense', 650);
   assert.equal((await table(page))[1].expense, 650);
   await page.waitForFunction(() => !document.getElementById('btn-ai').disabled);
