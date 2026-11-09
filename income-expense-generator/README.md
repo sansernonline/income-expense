@@ -39,9 +39,9 @@ node --test server/b2.test.js   # รันไฟล์เดียว
 | `RATE_LIMIT_PER_MIN` | จำนวนครั้งที่ 1 IP เรียก AI ได้ต่อนาที | `10` |
 | `TRUST_PROXY` | ตั้ง `1` เมื่ออยู่หลัง proxy ให้นับ IP จาก `X-Forwarded-For` | ปิด |
 | `IEGEN_LOGIN_USER` `IEGEN_LOGIN_PASSWORD_HASH` `IEGEN_SESSION_SECRET` | login บัญชีเดียว ต้องตั้งครบ 3 ตัว (ดูหัวข้อ login) | ว่าง (ไม่มีหน้า login และปิดประวัติ) |
-| `DATA_DIR` | โฟลเดอร์เก็บ SQLite | `data/` |
+| `DATA_DIR` | โฟลเดอร์เก็บ SQLite | `iegen-data/` |
 | `B2_ENDPOINT` `B2_BUCKET` `B2_KEY_ID` `B2_APPLICATION_KEY` | สำรองไป B2 ต้องตั้งครบ 4 ตัว | ว่าง (ไม่สำรอง) |
-| `B2_OBJECT_KEY` · `B2_REGION` | ชื่อไฟล์บน bucket · region เมื่ออ่านจาก endpoint ไม่ได้ | `iegen/iegen.sqlite` |
+| `B2_FOLDER` · `B2_REGION` | โฟลเดอร์บน bucket (แอปตั้งชื่อไฟล์ `iegen.sqlite` เอง) · region เมื่ออ่านจาก endpoint ไม่ได้ | `iegen-data` |
 
 ค่าลับอยู่ใน `.env` ฝั่งเซิร์ฟเวอร์ ไม่ส่งถึงเบราว์เซอร์ และ `.env` ไม่เข้า git
 

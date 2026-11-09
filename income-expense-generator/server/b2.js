@@ -32,7 +32,8 @@ function b2Config(env = process.env) {
   if (u.protocol !== 'https:' && !['127.0.0.1', 'localhost'].includes(u.hostname)) throw new Error('B2_ENDPOINT ต้องเป็น https');
   const region = env.B2_REGION || (u.hostname.match(/^s3\.([a-z0-9-]+)\.backblazeb2\.com$/) || [])[1];
   if (!region) throw new Error('หา region จาก B2_ENDPOINT ไม่ได้ ตั้ง B2_REGION เอง');
-  return { base: u.origin, bucket: env.B2_BUCKET, keyId: env.B2_KEY_ID, secret: env.B2_APPLICATION_KEY, region, objectKey: env.B2_OBJECT_KEY || 'iegen/iegen.sqlite' };
+  const folder = (env.B2_FOLDER || 'iegen-data').replace(/^\/+|\/+$/g, '');
+  return { base: u.origin, bucket: env.B2_BUCKET, keyId: env.B2_KEY_ID, secret: env.B2_APPLICATION_KEY, region, objectKey: `${folder}/iegen.sqlite` };
 }
 
 function request(cfg, method, body) {

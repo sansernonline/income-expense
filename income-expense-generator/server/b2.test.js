@@ -17,7 +17,12 @@ const full = { B2_ENDPOINT: 'https://s3.us-west-004.backblazeb2.com', B2_BUCKET:
 test('ไม่ตั้ง B2 เลย = ไม่สำรอง', () => assert.equal(b2Config({}), null));
 
 test('อ่าน region จาก endpoint และตั้งชื่อไฟล์ตั้งต้น', () => {
-  assert.deepEqual(b2Config(full), { base: 'https://s3.us-west-004.backblazeb2.com', bucket: 'b', keyId: 'k', secret: 'secret-value', region: 'us-west-004', objectKey: 'iegen/iegen.sqlite' });
+  assert.deepEqual(b2Config(full), { base: 'https://s3.us-west-004.backblazeb2.com', bucket: 'b', keyId: 'k', secret: 'secret-value', region: 'us-west-004', objectKey: 'iegen-data/iegen.sqlite' });
+});
+
+test('B2_FOLDER ตั้งแค่โฟลเดอร์ ชื่อไฟล์ต่อให้เอง', () => {
+  assert.equal(b2Config({ ...full, B2_FOLDER: 'my-data' }).objectKey, 'my-data/iegen.sqlite');
+  assert.equal(b2Config({ ...full, B2_FOLDER: '/my-data/' }).objectKey, 'my-data/iegen.sqlite');
 });
 
 test('ตั้งไม่ครบ บอกชื่อที่ขาดแต่ไม่พิมพ์ค่าลับ', () => {

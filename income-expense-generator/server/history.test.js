@@ -59,7 +59,7 @@ test('บันทึก → อยู่ในรายการ เปิด�
   assert.equal(backup, 'ok');
 
   const last = b2.puts.at(-1);
-  assert.equal(last.url, '/iegen-test/iegen/iegen.sqlite');
+  assert.equal(last.url, '/iegen-test/iegen-data/iegen.sqlite');
   assert.match(last.headers.authorization, /^AWS4-HMAC-SHA256 Credential=kid\/\d{8}\/us-west-004\/s3\/aws4_request, SignedHeaders=content-type;host;x-amz-content-sha256;x-amz-date, Signature=[0-9a-f]{64}$/);
   assert.equal(b2.objects.get(last.url).subarray(0, 15).toString(), 'SQLite format 3');
 
@@ -91,7 +91,7 @@ test('ลบแล้วเปิดไม่ได้ · ลบซ้ำได�
 });
 
 test('เครื่องเริ่มใหม่ไม่มีไฟล์ในเครื่อง → ดึงฐานข้อมูลล่าสุดจาก B2 มาใช้', async () => {
-  const h = createHistory({ dataDir: tmp('restore'), auth: okAuth, b2cfg: { base: b2cfg.B2_ENDPOINT, bucket: 'iegen-test', keyId: 'kid', secret: 'appkey', region: 'us-west-004', objectKey: 'iegen/iegen.sqlite' } });
+  const h = createHistory({ dataDir: tmp('restore'), auth: okAuth, b2cfg: { base: b2cfg.B2_ENDPOINT, bucket: 'iegen-test', keyId: 'kid', secret: 'appkey', region: 'us-west-004', objectKey: 'iegen-data/iegen.sqlite' } });
   const r = await h.handle({ method: 'GET', headers: {} }, new URL('http://x/api/ledgers'));
   assert.equal(r.status, 200);
   assert.ok(r.body.items.some((x) => x.name === 'ร้านกาแฟ ม.ค.'));
@@ -100,7 +100,7 @@ test('เครื่องเริ่มใหม่ไม่มีไฟล�
 
 test('ดึงจาก B2 ไม่สำเร็จ → 503 ไม่เปิดฐานว่าง · B2 กลับมาแล้วใช้ได้', async () => {
   const dir = tmp('fail');
-  const h = createHistory({ dataDir: dir, auth: okAuth, b2cfg: { base: b2cfg.B2_ENDPOINT, bucket: 'iegen-test', keyId: 'kid', secret: 'appkey', region: 'us-west-004', objectKey: 'iegen/iegen.sqlite' }, log: () => {} });
+  const h = createHistory({ dataDir: dir, auth: okAuth, b2cfg: { base: b2cfg.B2_ENDPOINT, bucket: 'iegen-test', keyId: 'kid', secret: 'appkey', region: 'us-west-004', objectKey: 'iegen-data/iegen.sqlite' }, log: () => {} });
   const req = { method: 'GET', headers: {} }, url = new URL('http://x/api/ledgers');
   b2.failGet = true;
   assert.equal((await h.handle(req, url)).status, 503);

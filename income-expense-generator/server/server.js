@@ -30,7 +30,7 @@ const PUBLIC = path.join(__dirname, '..', 'public');
 // ประวัติ: SQLite ใน DATA_DIR · สำรองไป B2 เมื่อตั้งค่า B2_* ครบ (ตั้งไม่ครบ = หยุดตั้งแต่เริ่ม ไม่เงียบ)
 // login: ไม่ตั้ง IEGEN_LOGIN_* เลย = ไม่มี login (ประวัติปิด) · ตั้งไม่ครบ = หยุดตั้งแต่เริ่ม ไม่เงียบ
 const auth = createAuth(loadAuthConfig(process.env));
-const history = createHistory({ dataDir: process.env.DATA_DIR || path.join(__dirname, '..', 'data'), auth, b2cfg: b2Config() });
+const history = createHistory({ dataDir: process.env.DATA_DIR || path.join(__dirname, '..', 'iegen-data'), auth, b2cfg: b2Config() });
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml' };
 
 const send = (res, code, body, type = 'application/json; charset=utf-8', extra = {}) => {
