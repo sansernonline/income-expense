@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="th" data-theme="light">
+<html lang="th">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -21,16 +21,8 @@
   --accent:#CC1152;--accent-fill:#E11D48;--on-accent:#FFFFFF;--flash:#FFE4EC;
   --accent-grad:linear-gradient(135deg,#E11D48,#A855F7);--accent-glow:rgba(225,29,72,.35);
   --panel-sh:0 1px 2px rgba(16,16,24,.04),0 14px 34px -18px rgba(16,16,24,.16);
-  --ok:#15803D;--err:#C81E1E;--err-bg:#FDECEA;--warn:#B45309;
+  --hover:rgba(18,18,22,.07);--ok:#15803D;--err:#C81E1E;--err-bg:#FDECEA;--warn:#B45309;
   --bg-grad:radial-gradient(900px 620px at 72% -12%,rgba(255,255,255,.95),transparent 62%),linear-gradient(180deg,#F3F3F8 0%,#EAEAF1 100%);
-}
-html[data-theme=dark]{
-  --desk:#0E0E12;--surface:#17171C;--surface-2:#202027;--line:#2A2A33;--line-2:#4C4C59;
-  --text:#F2F2F5;--text-2:#B4B4C0;--text-3:#9A9AA7;
-  --accent:#FB7185;--flash:#2C2C36;
-  --panel-sh:0 1px 2px rgba(0,0,0,.5),0 22px 50px -26px rgba(0,0,0,.8);
-  --accent-glow:rgba(225,29,72,.4);--ok:#6EE7A8;--err:#FF8FA0;--err-bg:#3C1C24;--warn:#FFC857;
-  --bg-grad:radial-gradient(900px 620px at 72% -12%,rgba(255,255,255,.05),transparent 62%),linear-gradient(180deg,#15151A 0%,#0C0C10 100%);
 }
 *{box-sizing:border-box;margin:0}
 html,body{height:100%}
@@ -52,12 +44,13 @@ button[disabled]{opacity:.45;cursor:default}
 .top-actions{display:flex;gap:var(--s2)}
 
 /* ปุ่ม */
-.btn{height:36px;padding:0 var(--s4);border:1px solid var(--line-2);border-radius:var(--r-pill);font-weight:600;font-size:var(--fs-sm);background:var(--surface);white-space:nowrap}
-.btn:hover{background:var(--surface-2)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 var(--s4);border:1px solid var(--line-2);border-radius:var(--r-pill);font-weight:600;font-size:var(--fs-sm);background:var(--surface);white-space:nowrap}
+.btn:hover{background:var(--hover)}
+.btn .ico{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .btn.primary{background:var(--accent-grad);background-color:var(--accent-fill);border-color:transparent;color:var(--on-accent);box-shadow:0 10px 26px -10px var(--accent-glow)}
 .btn.primary:hover{filter:brightness(1.06)}
 .btn.ghost{border-color:transparent;background:transparent;color:var(--text-2)}
-.btn.ghost:hover{background:var(--surface-2)}
+.btn.ghost:hover{background:var(--hover);color:var(--text)}
 .btn.danger{color:var(--err);border-color:var(--err)}
 
 /* โครง: ตารางซ้าย · ตั้งค่าขวา */
@@ -133,7 +126,15 @@ td.x{width:36px;text-align:center}
 .del{width:32px;height:32px;border-radius:8px;color:var(--text-3);font-size:18px;line-height:1}
 .del:hover{background:var(--err-bg);color:var(--err)}
 col.d{width:150px}
-td:nth-child(1){width:140px}td:nth-child(3),td:nth-child(4){width:112px}td:nth-child(5){width:120px}td:nth-child(2){min-width:200px}
+td:nth-child(2){width:140px}td:nth-child(4),td:nth-child(5){width:112px}td:nth-child(6){width:120px}td:nth-child(3){min-width:200px}
+/* ลากย้ายแถว: จับที่ปุ่ม ⋮⋮ · เส้นสีบอกตำแหน่งที่จะวาง */
+th.g,td.g{width:28px;padding:0}
+.grip{width:28px;height:32px;border-radius:8px;color:var(--text-3);cursor:grab;touch-action:none;display:flex;align-items:center;justify-content:center}
+.grip svg{width:14px;height:14px;fill:currentColor}
+.grip:hover{background:var(--hover);color:var(--text)}
+tr.dragging{opacity:.45}tr.dragging .grip{cursor:grabbing}
+body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none}
+tr.drop-before td{box-shadow:inset 0 2px 0 var(--accent)}tr.drop-after td{box-shadow:inset 0 -2px 0 var(--accent)}
 .empty{padding:var(--s6) var(--s5);text-align:center;color:var(--text-2)}
 .empty b{display:block;color:var(--text);margin-bottom:var(--s1);font-size:var(--fs-md)}
 .sum{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s3);padding:var(--s3) var(--s4);border-top:1px solid var(--line);background:var(--surface-2);flex:none}
@@ -156,12 +157,13 @@ td:nth-child(1){width:140px}td:nth-child(3),td:nth-child(4){width:112px}td:nth-c
   .side-body{overflow:visible}
   .tablewrap{min-height:300px}
   table{min-width:700px}
-  td:nth-child(2){min-width:190px}
+  td:nth-child(3){min-width:190px}
+  .grip{height:44px}
   .sum{grid-template-columns:1fr 1fr}
   .btn,.chip{min-height:44px}
   .prow input,.prow select,.prow .rm{min-height:44px}
 }
-@media (prefers-reduced-motion:no-preference){.btn,.chip,.del{transition:background .12s ease-out,border-color .12s ease-out}}
+@media (prefers-reduced-motion:no-preference){.btn,.chip,.del,.grip{transition:background .12s ease-out,border-color .12s ease-out}}
 
 /* หน้าต่างประวัติ */
 .hist{margin:auto;width:min(560px,calc(100vw - 32px));max-height:min(640px,calc(100vh - 32px));padding:var(--s5);border:1px solid var(--line);border-radius:var(--r-panel);background:var(--surface);color:var(--text);box-shadow:var(--panel-sh)}
@@ -202,8 +204,7 @@ body{padding-bottom:48px}@media(max-width:860px){.login{padding-bottom:150px;ali
   <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM4 10h16M12 10v9"/></svg><b>Income &amp; Expense</b><span class="sub">สร้างรายรับรายจ่ายจำลอง</span></div>
   <div class="top-actions">
     <button class="btn ghost" id="btn-clear" type="button">ล้างทั้งหมด</button>
-    <button class="btn ghost" id="btn-theme" type="button" aria-label="สลับโหมดสว่าง/มืด">โหมดมืด</button>
-    <button class="btn ghost" id="btn-logout" type="button" hidden>ออกจากระบบ</button>
+    <button class="btn ghost" id="btn-logout" type="button" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 8l-4 4 4 4M6 12h10"/></svg>ออกจากระบบ</button>
   </div>
 </header>
 
@@ -220,13 +221,13 @@ body{padding-bottom:48px}@media(max-width:860px){.login{padding-bottom:150px;ali
       <button class="btn" id="btn-undo" type="button">ย้อนกลับ</button>
       <button class="btn" id="btn-add" type="button">เพิ่มรายการ</button>
       <span class="grow"></span>
-      <button class="btn" id="btn-hist" type="button">ประวัติ</button>
-      <button class="btn" id="btn-export" type="button">ส่งออก Excel</button>
+      <button class="btn" id="btn-hist" type="button" title="บันทึกชุดนี้ไว้ หรือเปิดชุดที่บันทึกไว้"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>บันทึก / เปิด</button>
+      <button class="btn" id="btn-export" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>ส่งออก Excel</button>
     </div>
 
     <div class="tablewrap">
       <table id="tbl">
-        <thead><tr><th>วันที่<small>วัน-เดือน-ปี</small></th><th>รายการ<small>ชื่อ แก้ได้</small></th><th class="r">รายรับ<small>เงินเข้า (บาท)</small></th><th class="r">รายจ่าย<small>เงินออก (บาท)</small></th><th class="r">คงเหลือ<small>เงินสะสม (บาท)</small></th><th class="x"><span class="sr">ลบ</span></th></tr></thead>
+        <thead><tr><th class="g"><span class="sr">ลากเพื่อย้าย</span></th><th>วันที่<small>วัน-เดือน-ปี</small></th><th>รายการ<small>ชื่อ แก้ได้</small></th><th class="r">รายรับ<small>เงินเข้า (บาท)</small></th><th class="r">รายจ่าย<small>เงินออก (บาท)</small></th><th class="r">คงเหลือ<small>เงินสะสม (บาท)</small></th><th class="x"><span class="sr">ลบ</span></th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
       <div class="empty" id="empty">
@@ -322,7 +323,7 @@ body{padding-bottom:48px}@media(max-width:860px){.login{padding-bottom:150px;ali
 </main>
 
 <dialog class="hist" id="hist" aria-labelledby="hist-h">
-  <form method="dialog" class="hist-head"><h2 id="hist-h">ประวัติที่บันทึก</h2><button class="btn ghost" value="close">ปิด</button></form>
+  <form method="dialog" class="hist-head"><h2 id="hist-h">บันทึก / เปิดชุดรายการ</h2><button class="btn ghost" value="close">ปิด</button></form>
   <div id="hist-main">
     <div class="addrow"><input id="hist-name" type="text" maxlength="100" aria-label="ชื่อชุดที่จะบันทึก"><button class="btn primary" id="hist-save" type="button">บันทึกชุดนี้</button></div>
     <p class="lbl sm" id="hist-note" role="status"></p>
@@ -700,6 +701,15 @@ body{padding-bottom:48px}@media(max-width:860px){.login{padding-bottom:150px;ali
   const sortRows = (rows) =>
     rows.map((r, i) => [r, i]).sort((a, b) => a[0].date.localeCompare(b[0].date) || a[1] - b[1]).map((x) => x[0]);
 
+  /** ย้ายแถวที่ from ไปวางที่ตำแหน่ง to (นับหลังดึงแถวออกแล้ว) · วันที่เปลี่ยนเป็นวันของแถวบนที่วางแทรก ไม่มีแถวบนใช้แถวล่าง → ตารางยังเรียงตามวันที่ */
+  function moveRow(rows, from, to) {
+    const out = rows.slice();
+    const [row] = out.splice(from, 1);
+    const ref = out[to - 1] || out[to];
+    out.splice(to, 0, ref ? { ...row, date: ref.date } : row);
+    return out;
+  }
+
   /** คืนยอดคงเหลือทีละแถว (FR-TBL-030) */
   function balances(rows, opening = 0) {
     let bal = Number(opening) || 0;
@@ -718,7 +728,7 @@ body{padding-bottom:48px}@media(max-width:860px){.login{padding-bottom:150px;ali
     return Number.isFinite(n) && n > 0 ? round2(n) : 0;
   };
 
-  return { MAX_DAYS, seeded, eachDay, weekday, monthsIn, dayCount, split, generate, sortRows, balances, totals, toMoney, round2 };
+  return { MAX_DAYS, seeded, eachDay, weekday, monthsIn, dayCount, split, generate, sortRows, moveRow, balances, totals, toMoney, round2 };
 });
 
 </script>
@@ -900,7 +910,7 @@ window.fetch = async (url, opts) => {
 };
 /* หน้าจอ IEGEN: ตาราง (ซ้าย) + แผงตั้งค่า (ขวา) + ส่งออก Excel (ตรรกะอยู่ใน ledger.js / plan.js / presets.js) */
 (function () {
-  const { generate, sortRows, balances, totals, toMoney, monthsIn, dayCount, eachDay, weekday, MAX_DAYS, FALLBACK_PLAN, sanitizePlan, sanitizeSettings, LIMITS, PRESETS } = window.IE;
+  const { generate, sortRows, moveRow, balances, totals, toMoney, monthsIn, dayCount, eachDay, weekday, MAX_DAYS, FALLBACK_PLAN, sanitizePlan, sanitizeSettings, LIMITS, PRESETS } = window.IE;
   const $ = (id) => document.getElementById(id);
   const KEY = 'iegen.v1';
   const OTHER = 'other';
@@ -1199,7 +1209,8 @@ window.fetch = async (url, opts) => {
     const body = $('rows'); body.textContent = '';
     for (const r of state.rows) {
       const tr = document.createElement('tr'); tr.dataset.id = r.id;
-      tr.innerHTML = '<td><input type="date" data-f="date" aria-label="วันที่"></td><td><input type="text" data-f="name" maxlength="60" aria-label="รายการ"></td>' +
+      tr.innerHTML = '<td class="g"><button class="grip" type="button" aria-label="ลากเพื่อย้ายแถว หรือกดลูกศรขึ้น/ลง" title="ลากเพื่อย้าย · วันที่จะเปลี่ยนตามแถวด้านบน"><svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="4.5" cy="3" r="1.3"/><circle cx="9.5" cy="3" r="1.3"/><circle cx="4.5" cy="7" r="1.3"/><circle cx="9.5" cy="7" r="1.3"/><circle cx="4.5" cy="11" r="1.3"/><circle cx="9.5" cy="11" r="1.3"/></svg></button></td>' +
+        '<td><input type="date" data-f="date" aria-label="วันที่"></td><td><input type="text" data-f="name" maxlength="60" aria-label="รายการ"></td>' +
         '<td><input type="text" class="num" inputmode="decimal" data-f="income" aria-label="รายรับ"></td><td><input type="text" class="num" inputmode="decimal" data-f="expense" aria-label="รายจ่าย"></td>' +
         '<td class="bal"></td><td class="x"><button class="del" type="button" aria-label="ลบรายการนี้">×</button></td>';
       tr.querySelector('[data-f=date]').value = r.date; tr.querySelector('[data-f=name]').value = r.name;
@@ -1241,7 +1252,54 @@ window.fetch = async (url, opts) => {
       const last = [...$('rows').querySelectorAll('[data-f=name]')].pop(); last.focus(); last.select();
     });
     $('btn-regen').addEventListener('click', () => { if (generateNow(true)) toast(S().seed !== '' ? 'ล็อกผลสุ่มอยู่ ผลจึงเหมือนเดิม · ล้างช่อง “ล็อกผลสุ่ม” เพื่อสุ่มใหม่' : 'สุ่มรายการใหม่แล้ว'); });
+    bindDrag();
     $('btn-undo').addEventListener('click', () => { if (!state.prevRows) return; state.rows = state.prevRows; state.prevRows = null; save(); renderTable(); toast('ย้อนกลับแล้ว'); });
+  }
+
+  /* ---------- ลากย้ายแถว (เมาส์ นิ้ว และลูกศรขึ้น/ลงบนปุ่มจับ) ---------- */
+  function placeRow(from, to) {
+    if (to === from || to < 0 || to >= state.rows.length) return;
+    const before = state.rows[from].date;
+    state.rows = moveRow(state.rows, from, to); save(); renderTable();
+    const moved = state.rows[to];
+    $('rows').children[to].querySelector('.grip').focus();
+    if (moved.date !== before) toast(`ย้ายแล้ว · วันที่เปลี่ยนเป็น ${thDate(moved.date)}`);
+  }
+  function bindDrag() {
+    const body = $('rows'), wrap = body.closest('.tablewrap');
+    let drag = null;
+    const clearMarks = () => body.querySelectorAll('.drop-before,.drop-after').forEach((tr) => tr.classList.remove('drop-before', 'drop-after'));
+    /** แถวแรกที่จุดกึ่งกลางอยู่ต่ำกว่าเคอร์เซอร์ = แทรกก่อนแถวนั้น · ไม่มี = ต่อท้าย */
+    const slotAt = (y) => { const trs = [...body.children]; const i = trs.findIndex((tr) => { const b = tr.getBoundingClientRect(); return y < b.top + b.height / 2; }); return i < 0 ? trs.length : i; };
+    body.addEventListener('pointerdown', (e) => {
+      const g = e.target.closest('.grip'); if (!g || e.button !== 0) return;
+      e.preventDefault(); // กันเลือกข้อความ แต่ทำให้ช่องที่กำลังพิมพ์ไม่เสียโฟกัสเอง → blur ให้ค่าที่พิมพ์ค้างถูกบันทึกก่อนย้าย
+      if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+      if (!g.isConnected) return; // แก้วันที่ค้างไว้ ตารางวาดใหม่แล้ว ปุ่มจับเดิมหายไป
+      g.setPointerCapture(e.pointerId);
+      const tr = g.closest('tr'); drag = { tr, from: [...body.children].indexOf(tr), slot: null };
+      tr.classList.add('dragging'); document.body.classList.add('is-dragging');
+    });
+    body.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const w = wrap.getBoundingClientRect(); // ลากชิดขอบบน/ล่างแล้วเลื่อนตารางตาม
+      if (e.clientY < w.top + 40) wrap.scrollTop -= 12; else if (e.clientY > w.bottom - 40) wrap.scrollTop += 12;
+      const slot = slotAt(e.clientY), trs = body.children; clearMarks();
+      drag.slot = slot === drag.from || slot === drag.from + 1 ? null : slot; // วางที่เดิม ไม่ต้องแสดงเส้น
+      if (drag.slot === null) return;
+      if (slot < trs.length) trs[slot].classList.add('drop-before'); else trs[trs.length - 1].classList.add('drop-after');
+    });
+    const end = () => {
+      if (!drag) return; const { tr, from, slot } = drag; drag = null;
+      tr.classList.remove('dragging'); document.body.classList.remove('is-dragging'); clearMarks();
+      if (slot !== null) placeRow(from, slot > from ? slot - 1 : slot);
+    };
+    body.addEventListener('pointerup', end); body.addEventListener('pointercancel', end);
+    body.addEventListener('keydown', (e) => {
+      if (!e.target.closest('.grip') || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+      e.preventDefault(); const from = [...body.children].indexOf(e.target.closest('tr'));
+      placeRow(from, from + (e.key === 'ArrowUp' ? -1 : 1));
+    });
   }
 
   /* ---------- ส่งออก Excel ---------- */
@@ -1279,12 +1337,8 @@ window.fetch = async (url, opts) => {
     document.querySelector('.app').dataset.view = v;
     document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.tab === v));
   }
-  function setTheme(t) { document.documentElement.dataset.theme = t; $('btn-theme').textContent = t === 'dark' ? 'โหมดสว่าง' : 'โหมดมืด'; try { localStorage.setItem('iegen.theme', t); } catch (e) { /* ข้าม */ } }
 
   function init() {
-    let theme = 'light'; try { theme = localStorage.getItem('iegen.theme') || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light'); } catch (e) { /* ข้าม */ }
-    setTheme(theme);
-    $('btn-theme').addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
     document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
     $('btn-gen').addEventListener('click', generateNow); $('btn-ai').addEventListener('click', askAi);
     $('btn-export').addEventListener('click', exportXlsx);
