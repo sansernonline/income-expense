@@ -72,6 +72,15 @@ button[disabled]{opacity:.45;cursor:default}
 input[type=text],input[type=password],input[type=date],input[type=number],select{height:36px;padding:0 var(--s3);border:1px solid var(--line-2);border-radius:var(--r-ctl);background:var(--surface);color:var(--text);min-width:0;width:100%}
 .range{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3)}
 .range label{display:flex;flex-direction:column;gap:2px;font-size:var(--fs-xs)}
+.range.total{grid-template-columns:7.5rem 1fr}
+/* หน่วยต่อท้ายในช่อง (% · บาท) — ซ่อนลูกศรเลขไม่ให้ทับหน่วย */
+.unit{position:relative;display:block}
+.unit::after{content:attr(data-unit);position:absolute;right:var(--s3);top:50%;transform:translateY(-50%);color:var(--text-2);font-size:var(--fs-sm);pointer-events:none}
+.unit input{padding-right:3.8em;text-align:right;-moz-appearance:textfield;appearance:textfield}
+.unit[data-unit="%"] input{padding-right:2.4em}
+.prow .unit::after{right:var(--s2)}
+.prow .unit[data-unit="%"] input{padding-right:1.9em}
+.unit input::-webkit-inner-spin-button,.unit input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .lbl.sm{font-size:var(--fs-xs);color:var(--text-3)}
 .months{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:var(--s2)}
 .months label{display:flex;flex-direction:column;gap:2px;font-size:var(--fs-xs)}
@@ -259,7 +268,7 @@ body{padding-bottom:48px}@media(max-width:860px){.login{padding-bottom:150px;ali
         <div class="grid">
           <label class="field">วันที่เริ่ม<input id="start" type="date"></label>
           <label class="field">วันที่สิ้นสุด<input id="end" type="date"></label>
-          <label class="field span2">ยอดยกมา (บาท)<input id="opening" type="number" min="0" step="0.01" inputmode="decimal"></label>
+          <label class="field span2">ยอดยกมา (บาท)<span class="unit" data-unit="บาท"><input id="opening" type="number" min="0" step="0.01" inputmode="decimal"></span></label>
         </div>
       </section>
 
@@ -270,14 +279,14 @@ body{padding-bottom:48px}@media(max-width:860px){.login{padding-bottom:150px;ali
           <button type="button" class="chip" data-mode="day">ตั้งเป็นต่อวัน</button>
         </div>
         <div class="field" id="box-month"><span class="lbl">รายรับต่อเดือน (บาท) · แต่ละเดือนสุ่มในช่วงนี้ แล้วแบ่งลงแต่ละวันให้</span>
-          <div class="range"><label>ตั้งแต่<input id="mmin" type="number" min="0" step="1000" inputmode="numeric"></label><label>ถึง<input id="mmax" type="number" min="0" step="1000" inputmode="numeric"></label></div>
+          <div class="range"><label>ตั้งแต่<span class="unit" data-unit="บาท"><input id="mmin" type="number" min="0" step="1000" inputmode="numeric"></span></label><label>ถึง<span class="unit" data-unit="บาท"><input id="mmax" type="number" min="0" step="1000" inputmode="numeric"></span></label></div>
           <details class="sub"><summary>กำหนดยอดบางเดือนเอง</summary>
             <span class="lbl sm">เว้นว่าง = สุ่มในช่วงด้านบน</span>
             <div class="months" id="months"></div>
           </details>
         </div>
         <div class="field" id="box-day" hidden><span class="lbl">รายรับต่อวันที่ร้านเปิด (บาท) · แต่ละวันสุ่มในช่วงนี้ ยอดเดือนคือผลรวมของวัน</span>
-          <div class="range"><label>ตั้งแต่<input id="dmin" type="number" min="0" step="100" inputmode="numeric"></label><label>ถึง<input id="dmax" type="number" min="0" step="100" inputmode="numeric"></label></div>
+          <div class="range"><label>ตั้งแต่<span class="unit" data-unit="บาท"><input id="dmin" type="number" min="0" step="100" inputmode="numeric"></span></label><label>ถึง<span class="unit" data-unit="บาท"><input id="dmax" type="number" min="0" step="100" inputmode="numeric"></span></label></div>
           <span class="lbl sm" id="day-est"></span>
         </div>
         <div class="plan" id="rev-list" aria-label="หมวดรายรับ"></div>
@@ -288,8 +297,10 @@ body{padding-bottom:48px}@media(max-width:860px){.login{padding-bottom:150px;ali
         <h2>รายจ่าย</h2>
         <div class="plan" id="exp-list" aria-label="หมวดรายจ่าย"></div>
         <button class="btn small" id="btn-exp-add" type="button">เพิ่มหมวดรายจ่าย</button>
+        <div class="field"><span class="lbl">รายจ่ายรวม</span>
+          <div class="range total"><label>รายจ่าย (% ของรายรับ)<span class="unit" data-unit="%"><input id="exp-total" type="number" min="5" max="100" step="1" inputmode="decimal"></span></label><label>คงเหลือทั้งช่วง (บาท)<span class="unit" data-unit="บาท"><input id="remain" type="number" min="0" step="100" inputmode="numeric"></span></label></div>
+        </div>
         <p class="sumline" id="exp-sum"></p>
-        <label class="field">กำไรเป้าหมาย (% ของรายรับ) · เว้นว่าง = ใช้สัดส่วนตามหมวดด้านบน<input id="margin" type="number" min="0" max="95" step="1" inputmode="decimal" placeholder="เช่น 25"></label>
       </section>
 
       <section class="sec">
@@ -302,14 +313,14 @@ body{padding-bottom:48px}@media(max-width:860px){.login{padding-bottom:150px;ali
       </section>
 
       <details class="sec adv">
-        <summary>จังหวะการขายและความละเอียด</summary>
+        <summary>เดือนที่ขายดี/ซบเซา</summary>
         <div class="grid">
-          <label class="field span2">เสาร์–อาทิตย์ขายดีกว่าวันธรรมดา (%) · ศุกร์ได้ครึ่งหนึ่ง · ใช้เมื่อตั้งรายรับต่อเดือน<input id="weekendPct" type="number" min="0" max="100" step="5" inputmode="numeric"></label>
+          <label class="field span2">เสาร์–อาทิตย์ขายดีกว่าวันธรรมดา (%) · ศุกร์ได้ครึ่งหนึ่ง · ใช้เมื่อตั้งรายรับต่อเดือน<span class="unit" data-unit="%"><input id="weekendPct" type="number" min="0" max="100" step="5" inputmode="numeric"></span></label>
           <div class="field span2"><span class="lbl">เดือนขายดี / ซบเซา · กดเดือนเพื่อสลับ ปกติ → ขายดี ▲ → ซบเซา ▼</span><div class="chips" id="season"></div></div>
-          <label class="field span2">เดือนขายดี/ซบเซา ต่างจากปกติกี่ % (รวมกับช่วงรายรับที่ตั้งไว้)<input id="seasonPct" type="number" min="0" max="60" step="5" inputmode="numeric"></label>
+          <label class="field span2">เดือนขายดี/ซบเซา ต่างจากปกติกี่ % (รวมกับช่วงรายรับที่ตั้งไว้)<span class="unit" data-unit="%"><input id="seasonPct" type="number" min="0" max="60" step="5" inputmode="numeric"></span></label>
           <div class="field span2"><span class="lbl">จำนวนรายการรายรับต่อวัน</span>
             <div class="range"><label>อย่างน้อย<input id="txMin" type="number" min="1" max="6" step="1" inputmode="numeric"></label><label>มากสุด<input id="txMax" type="number" min="1" max="6" step="1" inputmode="numeric"></label></div></div>
-          <label class="field">ยอดแต่ละวันแกว่ง ± (%)<input id="jitterPct" type="number" min="0" max="60" step="5" inputmode="numeric"></label>
+          <label class="field">ยอดแต่ละวันแกว่ง ± (%)<span class="unit" data-unit="%"><input id="jitterPct" type="number" min="0" max="60" step="5" inputmode="numeric"></span></label>
           <label class="field">ล็อกผลสุ่ม (ใส่คำหรือเลข)<input id="seed" type="text" maxlength="20" placeholder="เว้นว่าง = สุ่มทุกครั้ง"></label>
         </div>
       </details>
@@ -627,6 +638,27 @@ body{padding-bottom:48px}@media(max-width:860px){.login{padding-bottom:150px;ali
     return a <= b ? a + Math.round((rng() * (b - a)) / 100) * 100 : Math.round(lo + (hi - lo) * rng());
   };
 
+  const openDays = (days, month, closedWeekdays, closedDates) =>
+    days.filter((d) => d.startsWith(month) && !closedWeekdays.includes(weekday(d)) && !closedDates.includes(d));
+  /** ตัวคูณยอดเดือน: ขายดี 1+p · ซบเซา 1−p · ปกติ 1 */
+  const seasonFactor = (season, month, p) => { const k = season[Number(month.slice(5))]; return k === 'peak' ? 1 + p : k === 'slow' ? 1 - p : 1; };
+
+  /** รายรับที่คาดทั้งช่วง (ใช้ค่ากลางของช่วงสุ่ม) · คิดแบบเดียวกับ generate แต่ไม่สุ่ม — ใช้แปลงคงเหลือ % ↔ บาทบนแผงตั้งค่า */
+  function expectedRevenue(settings) {
+    const { start, end, mode = 'month', monthlyRevenue = {}, closedWeekdays = [], closedDates = [], season = {} } = settings;
+    if (!start || !end || start > end || dayCount(start, end) > MAX_DAYS) return 0;
+    const [mMin, mMax] = range(settings.monthMin, settings.monthMax), [dMin, dMax] = range(settings.dayMin, settings.dayMax);
+    const seasonP = pctOf(settings.seasonPct, 25, 60), days = eachDay(start, end);
+    let sum = 0;
+    for (const month of monthsIn(start, end)) {
+      const open = openDays(days, month, closedWeekdays, closedDates).length;
+      if (!open) continue;
+      const f = seasonFactor(season, month, seasonP), fixed = Number(monthlyRevenue[month]);
+      sum += mode === 'day' ? (open * f * (dMin + dMax)) / 2 : fixed > 0 ? fixed : (f * (mMin + mMax)) / 2;
+    }
+    return round2(sum);
+  }
+
   /**
    * settings: { start, end, mode: 'month'|'day',
    *   monthMin, monthMax        — ช่วงรายรับต่อเดือน (โหมด month) แต่ละเดือนสุ่มในช่วง
@@ -653,12 +685,9 @@ body{padding-bottom:48px}@media(max-width:860px){.login{padding-bottom:150px;ali
     const rows = [];
     const days = eachDay(start, end);
     for (const month of monthsIn(start, end)) {
-      const open = days.filter(
-        (d) => d.startsWith(month) && !closedWeekdays.includes(weekday(d)) && !closedDates.includes(d)
-      );
+      const open = openDays(days, month, closedWeekdays, closedDates);
       if (!open.length) continue;
-      const kind = season[Number(month.slice(5))];
-      const f = kind === 'peak' ? 1 + seasonP : kind === 'slow' ? 1 - seasonP : 1;
+      const f = seasonFactor(season, month, seasonP);
 
       let incomes, target;
       if (mode === 'day') {
@@ -728,7 +757,7 @@ body{padding-bottom:48px}@media(max-width:860px){.login{padding-bottom:150px;ali
     return Number.isFinite(n) && n > 0 ? round2(n) : 0;
   };
 
-  return { MAX_DAYS, seeded, eachDay, weekday, monthsIn, dayCount, split, generate, sortRows, moveRow, balances, totals, toMoney, round2 };
+  return { MAX_DAYS, seeded, eachDay, weekday, monthsIn, dayCount, split, generate, expectedRevenue, sortRows, moveRow, balances, totals, toMoney, round2 };
 });
 
 </script>
@@ -910,7 +939,7 @@ window.fetch = async (url, opts) => {
 };
 /* หน้าจอ IEGEN: ตาราง (ซ้าย) + แผงตั้งค่า (ขวา) + ส่งออก Excel (ตรรกะอยู่ใน ledger.js / plan.js / presets.js) */
 (function () {
-  const { generate, sortRows, moveRow, balances, totals, toMoney, monthsIn, dayCount, eachDay, weekday, MAX_DAYS, FALLBACK_PLAN, sanitizePlan, sanitizeSettings, LIMITS, PRESETS } = window.IE;
+  const { generate, expectedRevenue, sortRows, moveRow, balances, totals, toMoney, monthsIn, dayCount, eachDay, weekday, MAX_DAYS, FALLBACK_PLAN, sanitizePlan, sanitizeSettings, LIMITS, PRESETS } = window.IE;
   const $ = (id) => document.getElementById(id);
   const KEY = 'iegen.v1';
   const OTHER = 'other';
@@ -965,7 +994,7 @@ window.fetch = async (url, opts) => {
       const l = document.createElement('label');
       l.append(`${mo}/${Number(y) + 543}`);
       const i = document.createElement('input'); i.type = 'number'; i.min = '0'; i.step = '1'; i.placeholder = 'สุ่มในช่วง'; i.value = S().monthlyRevenue[m] || ''; i.dataset.m = m; i.setAttribute('aria-label', `รายรับเป้าหมายเดือน ${mo}/${Number(y) + 543}`);
-      l.append(i); box.append(l);
+      l.append(withUnit(i, 'บาท')); box.append(l);
     } }
     const w = $('wdays');
     if (!w.children.length) WDAYS.forEach((name, i) => {
@@ -991,7 +1020,7 @@ window.fetch = async (url, opts) => {
     $('months').addEventListener('change', (e) => {
       const v = Math.max(0, Number(e.target.value) || 0);
       if (v) S().monthlyRevenue[e.target.dataset.m] = v; else delete S().monthlyRevenue[e.target.dataset.m];
-      e.target.value = v || ''; save();
+      e.target.value = v || ''; save(); renderExpSum();
     });
     $('mode').addEventListener('click', (e) => { const b = e.target.closest('[data-mode]'); if (!b) return; S().mode = b.dataset.mode; save(); renderSettings(); });
     for (const [lo, hi, a, b] of [['mmin', 'mmax', 'monthMin', 'monthMax'], ['dmin', 'dmax', 'dayMin', 'dayMax']]) {
@@ -1016,6 +1045,8 @@ window.fetch = async (url, opts) => {
   const clone = (o) => JSON.parse(JSON.stringify(o));
   const typeLabel = (id) => (id === OTHER ? 'อื่น ๆ (พิมพ์เอง)' : (PRESETS.find((p) => p.id === id) || {}).label || '');
   const mk = (tag, props, label) => { const e = document.createElement(tag); Object.assign(e, props); if (label) e.setAttribute('aria-label', label); return e; };
+  /** ห่อช่องตัวเลขให้มีหน่วยต่อท้าย (% · บาท) — หน้าตาอยู่ที่ .unit ใน styles.css */
+  const withUnit = (input, u) => { const s = mk('span', { className: 'unit' }); s.dataset.unit = u; s.append(input); return s; };
 
   function renderTypes() {
     const box = $('types');
@@ -1066,18 +1097,34 @@ window.fetch = async (url, opts) => {
       for (const [v, t] of Object.entries(FREQ)) f.append(mk('option', { value: v, textContent: t, selected: v === e.freq }));
       let d = mk('span');
       if (e.freq === 'monthly') { d = mk('input', { type: 'number', min: '1', max: '28', step: '1', value: e.day || 1, placeholder: 'วันที่' }, 'จ่ายวันที่ของเดือน'); d.dataset.f = 'day'; }
-      row.append(n, p, f, d, mk('button', { type: 'button', className: 'rm', textContent: '×' }, 'ลบหมวดรายจ่ายนี้'));
+      row.append(n, withUnit(p, '%'), f, d, mk('button', { type: 'button', className: 'rm', textContent: '×' }, 'ลบหมวดรายจ่ายนี้'));
       exp.append(row);
     });
     renderExpSum();
   }
 
+  const r1 = (n) => Math.round(n * 10) / 10;
+  /** รายรับที่คาดทั้งช่วงวันที่ (ค่ากลางของช่วงสุ่ม) · 0 = คิดไม่ได้ */
+  const expectedRev = () => (validRange() ? expectedRevenue(S()) : 0);
+  /** ช่องรายจ่ายรวม (%) / คงเหลือทั้งช่วง (บาท): S().margin ว่าง = ตามผลรวมหมวด · มีค่า = กำไร % ที่ผู้ใช้ตั้ง (ledger เกลี่ยให้ตรงตอนสร้าง) */
   function renderExpSum() {
-    const el = $('exp-sum'); const P = state.plan; if (!P) { el.textContent = ''; return; }
-    const r = (n) => Math.round(n * 10) / 10, sum = P.expenses.reduce((a, e) => a + (Number(e.pct) || 0), 0), m = S().margin;
-    el.textContent = m !== '' && m != null
-      ? `รวมตามหมวด ${r(sum)}% → ปรับสัดส่วนให้เหลือกำไร ${m}% (รายจ่ายรวม ${r(100 - m)}%)`
-      : `รายจ่ายรวม ${r(sum)}% ของรายรับ → ${sum < 100 ? `กำไรประมาณ ${r(100 - sum)}%` : 'ขาดทุน (รายจ่ายเกินรายรับ)'}`;
+    const el = $('exp-sum'), P = state.plan, m = S().margin, set = m !== '' && m != null, rev = expectedRev();
+    $('exp-total').disabled = !P; $('remain').disabled = !P || rev <= 0;
+    if (!P) { el.textContent = $('exp-total').value = $('remain').value = ''; return; }
+    const sum = r1(P.expenses.reduce((a, e) => a + (Number(e.pct) || 0), 0)), total = set ? r1(100 - m) : sum;
+    $('exp-total').value = total;
+    $('remain').value = rev > 0 ? Math.round((rev * Math.max(0, set ? m : 100 - sum)) / 100) : '';
+    el.textContent = !set && sum > 100 ? 'ขาดทุน (รายจ่ายเกินรายรับ)'
+      : set && sum !== total ? `บางหมวดเกิน 60% · ตอนสร้างรายการ ระบบเกลี่ยทุกหมวดให้รวมเป็น ${total}%` : '';
+  }
+  /** ตั้งรายจ่ายรวม (% ของรายรับ) แล้วเกลี่ยลงทุกหมวดตามสัดส่วนเดิม · หมวดเดียวไม่เกิน 60% */
+  function setExpenseTotal(total) {
+    const E = state.plan.expenses, sum = E.reduce((a, e) => a + (Number(e.pct) || 0), 0);
+    S().margin = Math.round((100 - total) * 1e4) / 1e4; // ไม่ปัด 0.1% — ยอดบาทที่กรอกต้องกลับมาเท่าเดิม
+    E.forEach((e) => { e.pct = Math.min(60, r1(sum > 0 ? ((Number(e.pct) || 0) * total) / sum : total / E.length)); });
+    // แก้ค่าในช่องเดิม ไม่สร้างแถวใหม่ — ช่องที่ผู้ใช้เพิ่งคลิกต่อจะไม่หลุดโฟกัส
+    $('exp-list').querySelectorAll('[data-f=pct]').forEach((el, i) => { el.value = E[i].pct; });
+    save(); renderExpSum();
   }
 
   const FIELD = { pct: [0, 60, 0], day: [1, 28, 1], weight: [1, 100, 1] };
@@ -1087,7 +1134,9 @@ window.fetch = async (url, opts) => {
       const itemOf = (el) => { const row = el.closest('.prow'); return row && { row, list: state.plan[row.dataset.k], i: Number(row.dataset.i) }; };
       box.addEventListener('input', (e) => {
         const f = e.target.dataset.f, at = itemOf(e.target); if (!at || !f || f === 'freq') return;
-        at.list[at.i][f] = f === 'name' ? e.target.value : Number(e.target.value); save(); renderExpSum();
+        at.list[at.i][f] = f === 'name' ? e.target.value : Number(e.target.value);
+        if (f === 'pct') S().margin = ''; // แก้หมวดเอง → ช่องรายจ่ายรวมกลับไปตามผลรวมหมวด
+        save(); renderExpSum();
       });
       box.addEventListener('change', (e) => {
         const at = itemOf(e.target), key = e.target.dataset.f;
@@ -1103,9 +1152,17 @@ window.fetch = async (url, opts) => {
       });
       box.addEventListener('click', (e) => {
         if (!e.target.closest('.rm')) return;
-        const at = itemOf(e.target); at.list.splice(at.i, 1); save(); renderPlan();
+        const at = itemOf(e.target); at.list.splice(at.i, 1); if (at.row.dataset.k === 'expenses') S().margin = ''; save(); renderPlan();
       });
     }
+    // กรอกช่องใดก็แปลงเป็นรายจ่าย % (5–100 = กำไร 0–95) แล้วเกลี่ยลงหมวด
+    const totalBox = (id, toTotal) => $(id).addEventListener('change', (e) => {
+      if (!state.plan) return;
+      if (e.target.value === '') { S().margin = ''; save(); return renderExpSum(); }
+      setExpenseTotal(Math.min(100, Math.max(5, toTotal(Number(e.target.value) || 0))));
+    });
+    totalBox('exp-total', (pct) => pct);
+    totalBox('remain', (baht) => 100 - (baht / expectedRev()) * 100);
     $('btn-rev-add').addEventListener('click', () => {
       if (!state.plan) return toast('เลือกประเภทธุรกิจก่อน');
       if (state.plan.revenue.length >= LIMITS.revenue) return toast(`หมวดรายรับไม่เกิน ${LIMITS.revenue} หมวด`);
@@ -1116,14 +1173,14 @@ window.fetch = async (url, opts) => {
       const freq = ['monthly', 'weekly', 'daily'].find((f) => state.plan.expenses.filter((x) => x.freq === f).length < LIMITS[f]);
       if (!freq) return toast('หมวดรายจ่ายเต็มแล้ว ลบหมวดเดิมก่อน');
       state.plan.expenses.push(freq === 'monthly' ? { name: 'รายจ่ายใหม่', pct: 1, freq, day: 1 } : { name: 'รายจ่ายใหม่', pct: 1, freq });
-      save(); renderPlan(); const l = [...$('exp-list').querySelectorAll('[data-f=name]')].pop(); l.focus(); l.select();
+      S().margin = ''; save(); renderPlan(); const l = [...$('exp-list').querySelectorAll('[data-f=name]')].pop(); l.focus(); l.select();
     });
   }
 
-  /* ---------- จังหวะการขาย / ความละเอียด ---------- */
+  /* ---------- เดือนที่ขายดี/ซบเซา และความละเอียด ---------- */
   const ADV_NUM = { weekendPct: [0, 100, 30], seasonPct: [0, 60, 25], jitterPct: [0, 60, 25], txMin: [1, 6, 1], txMax: [1, 6, 2] };
   function renderAdv() {
-    for (const id of [...Object.keys(ADV_NUM), 'seed', 'margin']) $(id).value = S()[id];
+    for (const id of [...Object.keys(ADV_NUM), 'seed']) $(id).value = S()[id];
     const box = $('season');
     if (!box.children.length) MONTHS.forEach((name, i) => { const b = mk('button', { type: 'button', className: 'chip' }); b.dataset.m = i + 1; box.append(b); });
     [...box.children].forEach((b, i) => {
@@ -1131,6 +1188,7 @@ window.fetch = async (url, opts) => {
       b.textContent = MONTHS[i] + (k === 'peak' ? ' ▲' : k === 'slow' ? ' ▼' : '');
       b.setAttribute('aria-label', `${MONTHS[i]} ${k === 'peak' ? 'ขายดี' : k === 'slow' ? 'ซบเซา' : 'ปกติ'}`); b.dataset.season = k || '';
     });
+    renderExpSum(); // เดือนขายดี/ซบเซาเปลี่ยนรายรับที่คาด → ยอดคงเหลือ (บาท) เปลี่ยนตาม (renderSettings ก็เรียกผ่านทางนี้)
   }
   function bindAdv() {
     for (const [id, [lo, hi, dflt]] of Object.entries(ADV_NUM)) {
@@ -1140,7 +1198,6 @@ window.fetch = async (url, opts) => {
         save(); renderAdv();
       });
     }
-    $('margin').addEventListener('change', (e) => { S().margin = e.target.value === '' ? '' : Math.min(95, Math.max(0, Number(e.target.value) || 0)); save(); renderAdv(); renderExpSum(); });
     $('seed').addEventListener('input', (e) => { S().seed = e.target.value; save(); });
     $('season').addEventListener('click', (e) => {
       const b = e.target.closest('[data-m]'); if (!b) return;
