@@ -238,7 +238,7 @@ test('FR_EXP_030 · NFR_PERF_010 · TC-EXP-015/PERF-001/006: ช่วง 366 �
 test('FR_STO_010 · TC-STO-001/002/011/012/013 · NFR-PRV: รีโหลดแล้วประเภท หมวด ตั้งค่าใหม่ ตารางกลับมาครบ · แก้ตารางแล้วรีโหลดยังอยู่ · ข้อมูลแชตเก่าถูกทิ้งไม่ย้ายค่า', o, async () => {
   const page = await open({ state: A, ai: K.aiOk(planA) });
   await page.locator('details.adv summary').click();
-  await fillNum(page, '#weekendPct', 55); await fillNum(page, '#margin', 20); await page.locator('#seed').fill('xyz');
+  await fillNum(page, '#weekendPct', 55); await fillNum(page, '#exp-total', 80); await page.locator('#seed').fill('xyz');
   await page.locator('#season [data-m="7"]').click();
   await gen(page);
   await edit(page, 0, 'name', 'แก้แล้ว');

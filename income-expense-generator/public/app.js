@@ -1,6 +1,6 @@
 /* หน้าจอ IEGEN: ตาราง (ซ้าย) + แผงตั้งค่า (ขวา) + ส่งออก Excel (ตรรกะอยู่ใน ledger.js / plan.js / presets.js) */
 (function () {
-  const { generate, sortRows, moveRow, balances, totals, toMoney, monthsIn, dayCount, eachDay, weekday, MAX_DAYS, FALLBACK_PLAN, sanitizePlan, sanitizeSettings, LIMITS, PRESETS } = window.IE;
+  const { generate, expectedRevenue, sortRows, moveRow, balances, totals, toMoney, monthsIn, dayCount, eachDay, weekday, MAX_DAYS, FALLBACK_PLAN, sanitizePlan, sanitizeSettings, LIMITS, PRESETS } = window.IE;
   const $ = (id) => document.getElementById(id);
   const KEY = 'iegen.v1';
   const OTHER = 'other';
@@ -55,7 +55,7 @@
       const l = document.createElement('label');
       l.append(`${mo}/${Number(y) + 543}`);
       const i = document.createElement('input'); i.type = 'number'; i.min = '0'; i.step = '1'; i.placeholder = 'สุ่มในช่วง'; i.value = S().monthlyRevenue[m] || ''; i.dataset.m = m; i.setAttribute('aria-label', `รายรับเป้าหมายเดือน ${mo}/${Number(y) + 543}`);
-      l.append(i); box.append(l);
+      l.append(withUnit(i, 'บาท')); box.append(l);
     } }
     const w = $('wdays');
     if (!w.children.length) WDAYS.forEach((name, i) => {
@@ -81,7 +81,7 @@
     $('months').addEventListener('change', (e) => {
       const v = Math.max(0, Number(e.target.value) || 0);
       if (v) S().monthlyRevenue[e.target.dataset.m] = v; else delete S().monthlyRevenue[e.target.dataset.m];
-      e.target.value = v || ''; save();
+      e.target.value = v || ''; save(); renderExpSum();
     });
     $('mode').addEventListener('click', (e) => { const b = e.target.closest('[data-mode]'); if (!b) return; S().mode = b.dataset.mode; save(); renderSettings(); });
     for (const [lo, hi, a, b] of [['mmin', 'mmax', 'monthMin', 'monthMax'], ['dmin', 'dmax', 'dayMin', 'dayMax']]) {
@@ -106,6 +106,8 @@
   const clone = (o) => JSON.parse(JSON.stringify(o));
   const typeLabel = (id) => (id === OTHER ? 'อื่น ๆ (พิมพ์เอง)' : (PRESETS.find((p) => p.id === id) || {}).label || '');
   const mk = (tag, props, label) => { const e = document.createElement(tag); Object.assign(e, props); if (label) e.setAttribute('aria-label', label); return e; };
+  /** ห่อช่องตัวเลขให้มีหน่วยต่อท้าย (% · บาท) — หน้าตาอยู่ที่ .unit ใน styles.css */
+  const withUnit = (input, u) => { const s = mk('span', { className: 'unit' }); s.dataset.unit = u; s.append(input); return s; };
 
   function renderTypes() {
     const box = $('types');
@@ -156,18 +158,34 @@
       for (const [v, t] of Object.entries(FREQ)) f.append(mk('option', { value: v, textContent: t, selected: v === e.freq }));
       let d = mk('span');
       if (e.freq === 'monthly') { d = mk('input', { type: 'number', min: '1', max: '28', step: '1', value: e.day || 1, placeholder: 'วันที่' }, 'จ่ายวันที่ของเดือน'); d.dataset.f = 'day'; }
-      row.append(n, p, f, d, mk('button', { type: 'button', className: 'rm', textContent: '×' }, 'ลบหมวดรายจ่ายนี้'));
+      row.append(n, withUnit(p, '%'), f, d, mk('button', { type: 'button', className: 'rm', textContent: '×' }, 'ลบหมวดรายจ่ายนี้'));
       exp.append(row);
     });
     renderExpSum();
   }
 
+  const r1 = (n) => Math.round(n * 10) / 10;
+  /** รายรับที่คาดทั้งช่วงวันที่ (ค่ากลางของช่วงสุ่ม) · 0 = คิดไม่ได้ */
+  const expectedRev = () => (validRange() ? expectedRevenue(S()) : 0);
+  /** ช่องรายจ่ายรวม (%) / คงเหลือทั้งช่วง (บาท): S().margin ว่าง = ตามผลรวมหมวด · มีค่า = กำไร % ที่ผู้ใช้ตั้ง (ledger เกลี่ยให้ตรงตอนสร้าง) */
   function renderExpSum() {
-    const el = $('exp-sum'); const P = state.plan; if (!P) { el.textContent = ''; return; }
-    const r = (n) => Math.round(n * 10) / 10, sum = P.expenses.reduce((a, e) => a + (Number(e.pct) || 0), 0), m = S().margin;
-    el.textContent = m !== '' && m != null
-      ? `รวมตามหมวด ${r(sum)}% → ปรับสัดส่วนให้เหลือกำไร ${m}% (รายจ่ายรวม ${r(100 - m)}%)`
-      : `รายจ่ายรวม ${r(sum)}% ของรายรับ → ${sum < 100 ? `กำไรประมาณ ${r(100 - sum)}%` : 'ขาดทุน (รายจ่ายเกินรายรับ)'}`;
+    const el = $('exp-sum'), P = state.plan, m = S().margin, set = m !== '' && m != null, rev = expectedRev();
+    $('exp-total').disabled = !P; $('remain').disabled = !P || rev <= 0;
+    if (!P) { el.textContent = $('exp-total').value = $('remain').value = ''; return; }
+    const sum = r1(P.expenses.reduce((a, e) => a + (Number(e.pct) || 0), 0)), total = set ? r1(100 - m) : sum;
+    $('exp-total').value = total;
+    $('remain').value = rev > 0 ? Math.round((rev * Math.max(0, set ? m : 100 - sum)) / 100) : '';
+    el.textContent = !set && sum > 100 ? 'ขาดทุน (รายจ่ายเกินรายรับ)'
+      : set && sum !== total ? `บางหมวดเกิน 60% · ตอนสร้างรายการ ระบบเกลี่ยทุกหมวดให้รวมเป็น ${total}%` : '';
+  }
+  /** ตั้งรายจ่ายรวม (% ของรายรับ) แล้วเกลี่ยลงทุกหมวดตามสัดส่วนเดิม · หมวดเดียวไม่เกิน 60% */
+  function setExpenseTotal(total) {
+    const E = state.plan.expenses, sum = E.reduce((a, e) => a + (Number(e.pct) || 0), 0);
+    S().margin = Math.round((100 - total) * 1e4) / 1e4; // ไม่ปัด 0.1% — ยอดบาทที่กรอกต้องกลับมาเท่าเดิม
+    E.forEach((e) => { e.pct = Math.min(60, r1(sum > 0 ? ((Number(e.pct) || 0) * total) / sum : total / E.length)); });
+    // แก้ค่าในช่องเดิม ไม่สร้างแถวใหม่ — ช่องที่ผู้ใช้เพิ่งคลิกต่อจะไม่หลุดโฟกัส
+    $('exp-list').querySelectorAll('[data-f=pct]').forEach((el, i) => { el.value = E[i].pct; });
+    save(); renderExpSum();
   }
 
   const FIELD = { pct: [0, 60, 0], day: [1, 28, 1], weight: [1, 100, 1] };
@@ -177,7 +195,9 @@
       const itemOf = (el) => { const row = el.closest('.prow'); return row && { row, list: state.plan[row.dataset.k], i: Number(row.dataset.i) }; };
       box.addEventListener('input', (e) => {
         const f = e.target.dataset.f, at = itemOf(e.target); if (!at || !f || f === 'freq') return;
-        at.list[at.i][f] = f === 'name' ? e.target.value : Number(e.target.value); save(); renderExpSum();
+        at.list[at.i][f] = f === 'name' ? e.target.value : Number(e.target.value);
+        if (f === 'pct') S().margin = ''; // แก้หมวดเอง → ช่องรายจ่ายรวมกลับไปตามผลรวมหมวด
+        save(); renderExpSum();
       });
       box.addEventListener('change', (e) => {
         const at = itemOf(e.target), key = e.target.dataset.f;
@@ -193,9 +213,17 @@
       });
       box.addEventListener('click', (e) => {
         if (!e.target.closest('.rm')) return;
-        const at = itemOf(e.target); at.list.splice(at.i, 1); save(); renderPlan();
+        const at = itemOf(e.target); at.list.splice(at.i, 1); if (at.row.dataset.k === 'expenses') S().margin = ''; save(); renderPlan();
       });
     }
+    // กรอกช่องใดก็แปลงเป็นรายจ่าย % (5–100 = กำไร 0–95) แล้วเกลี่ยลงหมวด
+    const totalBox = (id, toTotal) => $(id).addEventListener('change', (e) => {
+      if (!state.plan) return;
+      if (e.target.value === '') { S().margin = ''; save(); return renderExpSum(); }
+      setExpenseTotal(Math.min(100, Math.max(5, toTotal(Number(e.target.value) || 0))));
+    });
+    totalBox('exp-total', (pct) => pct);
+    totalBox('remain', (baht) => 100 - (baht / expectedRev()) * 100);
     $('btn-rev-add').addEventListener('click', () => {
       if (!state.plan) return toast('เลือกประเภทธุรกิจก่อน');
       if (state.plan.revenue.length >= LIMITS.revenue) return toast(`หมวดรายรับไม่เกิน ${LIMITS.revenue} หมวด`);
@@ -206,14 +234,14 @@
       const freq = ['monthly', 'weekly', 'daily'].find((f) => state.plan.expenses.filter((x) => x.freq === f).length < LIMITS[f]);
       if (!freq) return toast('หมวดรายจ่ายเต็มแล้ว ลบหมวดเดิมก่อน');
       state.plan.expenses.push(freq === 'monthly' ? { name: 'รายจ่ายใหม่', pct: 1, freq, day: 1 } : { name: 'รายจ่ายใหม่', pct: 1, freq });
-      save(); renderPlan(); const l = [...$('exp-list').querySelectorAll('[data-f=name]')].pop(); l.focus(); l.select();
+      S().margin = ''; save(); renderPlan(); const l = [...$('exp-list').querySelectorAll('[data-f=name]')].pop(); l.focus(); l.select();
     });
   }
 
-  /* ---------- จังหวะการขาย / ความละเอียด ---------- */
+  /* ---------- เดือนที่ขายดี/ซบเซา และความละเอียด ---------- */
   const ADV_NUM = { weekendPct: [0, 100, 30], seasonPct: [0, 60, 25], jitterPct: [0, 60, 25], txMin: [1, 6, 1], txMax: [1, 6, 2] };
   function renderAdv() {
-    for (const id of [...Object.keys(ADV_NUM), 'seed', 'margin']) $(id).value = S()[id];
+    for (const id of [...Object.keys(ADV_NUM), 'seed']) $(id).value = S()[id];
     const box = $('season');
     if (!box.children.length) MONTHS.forEach((name, i) => { const b = mk('button', { type: 'button', className: 'chip' }); b.dataset.m = i + 1; box.append(b); });
     [...box.children].forEach((b, i) => {
@@ -221,6 +249,7 @@
       b.textContent = MONTHS[i] + (k === 'peak' ? ' ▲' : k === 'slow' ? ' ▼' : '');
       b.setAttribute('aria-label', `${MONTHS[i]} ${k === 'peak' ? 'ขายดี' : k === 'slow' ? 'ซบเซา' : 'ปกติ'}`); b.dataset.season = k || '';
     });
+    renderExpSum(); // เดือนขายดี/ซบเซาเปลี่ยนรายรับที่คาด → ยอดคงเหลือ (บาท) เปลี่ยนตาม (renderSettings ก็เรียกผ่านทางนี้)
   }
   function bindAdv() {
     for (const [id, [lo, hi, dflt]] of Object.entries(ADV_NUM)) {
@@ -230,7 +259,6 @@
         save(); renderAdv();
       });
     }
-    $('margin').addEventListener('change', (e) => { S().margin = e.target.value === '' ? '' : Math.min(95, Math.max(0, Number(e.target.value) || 0)); save(); renderAdv(); renderExpSum(); });
     $('seed').addEventListener('input', (e) => { S().seed = e.target.value; save(); });
     $('season').addEventListener('click', (e) => {
       const b = e.target.closest('[data-m]'); if (!b) return;

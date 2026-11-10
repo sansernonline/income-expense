@@ -71,6 +71,27 @@
     return a <= b ? a + Math.round((rng() * (b - a)) / 100) * 100 : Math.round(lo + (hi - lo) * rng());
   };
 
+  const openDays = (days, month, closedWeekdays, closedDates) =>
+    days.filter((d) => d.startsWith(month) && !closedWeekdays.includes(weekday(d)) && !closedDates.includes(d));
+  /** ตัวคูณยอดเดือน: ขายดี 1+p · ซบเซา 1−p · ปกติ 1 */
+  const seasonFactor = (season, month, p) => { const k = season[Number(month.slice(5))]; return k === 'peak' ? 1 + p : k === 'slow' ? 1 - p : 1; };
+
+  /** รายรับที่คาดทั้งช่วง (ใช้ค่ากลางของช่วงสุ่ม) · คิดแบบเดียวกับ generate แต่ไม่สุ่ม — ใช้แปลงคงเหลือ % ↔ บาทบนแผงตั้งค่า */
+  function expectedRevenue(settings) {
+    const { start, end, mode = 'month', monthlyRevenue = {}, closedWeekdays = [], closedDates = [], season = {} } = settings;
+    if (!start || !end || start > end || dayCount(start, end) > MAX_DAYS) return 0;
+    const [mMin, mMax] = range(settings.monthMin, settings.monthMax), [dMin, dMax] = range(settings.dayMin, settings.dayMax);
+    const seasonP = pctOf(settings.seasonPct, 25, 60), days = eachDay(start, end);
+    let sum = 0;
+    for (const month of monthsIn(start, end)) {
+      const open = openDays(days, month, closedWeekdays, closedDates).length;
+      if (!open) continue;
+      const f = seasonFactor(season, month, seasonP), fixed = Number(monthlyRevenue[month]);
+      sum += mode === 'day' ? (open * f * (dMin + dMax)) / 2 : fixed > 0 ? fixed : (f * (mMin + mMax)) / 2;
+    }
+    return round2(sum);
+  }
+
   /**
    * settings: { start, end, mode: 'month'|'day',
    *   monthMin, monthMax        — ช่วงรายรับต่อเดือน (โหมด month) แต่ละเดือนสุ่มในช่วง
@@ -97,12 +118,9 @@
     const rows = [];
     const days = eachDay(start, end);
     for (const month of monthsIn(start, end)) {
-      const open = days.filter(
-        (d) => d.startsWith(month) && !closedWeekdays.includes(weekday(d)) && !closedDates.includes(d)
-      );
+      const open = openDays(days, month, closedWeekdays, closedDates);
       if (!open.length) continue;
-      const kind = season[Number(month.slice(5))];
-      const f = kind === 'peak' ? 1 + seasonP : kind === 'slow' ? 1 - seasonP : 1;
+      const f = seasonFactor(season, month, seasonP);
 
       let incomes, target;
       if (mode === 'day') {
@@ -172,5 +190,5 @@
     return Number.isFinite(n) && n > 0 ? round2(n) : 0;
   };
 
-  return { MAX_DAYS, seeded, eachDay, weekday, monthsIn, dayCount, split, generate, sortRows, moveRow, balances, totals, toMoney, round2 };
+  return { MAX_DAYS, seeded, eachDay, weekday, monthsIn, dayCount, split, generate, expectedRevenue, sortRows, moveRow, balances, totals, toMoney, round2 };
 });

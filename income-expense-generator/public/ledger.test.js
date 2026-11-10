@@ -131,6 +131,15 @@ test('กำไรเป้าหมาย: รายจ่ายรวม = (10
   assert.equal(sum(rows, 'income'), 100000);
 });
 
+test('รายรับที่คาดทั้งช่วง: ค่ากลางของช่วง × ขายดี/ซบเซา · เดือนที่กำหนดเองชนะ · โหมดรายวันคูณวันเปิด · ช่วงวันที่ผิดได้ 0', () => {
+  const m = { start: '2026-01-01', end: '2026-03-31', monthMin: 80000, monthMax: 100000, season: { 1: 'peak', 3: 'slow' }, seasonPct: 30, monthlyRevenue: { '2026-02': 50000 } };
+  assert.equal(L.expectedRevenue(m), 117000 + 50000 + 63000);
+  const same = { ...flat, start: '2026-01-01', end: '2026-03-31', season: { 1: 'peak', 3: 'slow' }, seasonPct: 30 };
+  assert.equal(L.expectedRevenue(same), sum(L.generate(same, FALLBACK_PLAN), 'income'), 'ช่วงแคบ = รายรับจริงที่สร้าง');
+  assert.equal(L.expectedRevenue({ start: '2026-11-01', end: '2026-11-30', mode: 'day', dayMin: 2000, dayMax: 4000, closedWeekdays: [0] }), 25 * 3000);
+  assert.equal(L.expectedRevenue({ start: '2026-03-02', end: '2026-03-01', monthMin: 1, monthMax: 1 }), 0);
+});
+
 test('ช่วงขายดี/ซบเซา: เดือนขายดีสูงกว่า ซบเซาต่ำกว่า (±30%)', () => {
   const s = { ...flat, start: '2026-01-01', end: '2026-03-31', season: { 1: 'peak', 3: 'slow' }, seasonPct: 30 };
   const rows = L.generate(s, FALLBACK_PLAN);

@@ -70,7 +70,7 @@
         <div class="grid">
           <label class="field">วันที่เริ่ม<input id="start" type="date"></label>
           <label class="field">วันที่สิ้นสุด<input id="end" type="date"></label>
-          <label class="field span2">ยอดยกมา (บาท)<input id="opening" type="number" min="0" step="0.01" inputmode="decimal"></label>
+          <label class="field span2">ยอดยกมา (บาท)<span class="unit" data-unit="บาท"><input id="opening" type="number" min="0" step="0.01" inputmode="decimal"></span></label>
         </div>
       </section>
 
@@ -81,14 +81,14 @@
           <button type="button" class="chip" data-mode="day">ตั้งเป็นต่อวัน</button>
         </div>
         <div class="field" id="box-month"><span class="lbl">รายรับต่อเดือน (บาท) · แต่ละเดือนสุ่มในช่วงนี้ แล้วแบ่งลงแต่ละวันให้</span>
-          <div class="range"><label>ตั้งแต่<input id="mmin" type="number" min="0" step="1000" inputmode="numeric"></label><label>ถึง<input id="mmax" type="number" min="0" step="1000" inputmode="numeric"></label></div>
+          <div class="range"><label>ตั้งแต่<span class="unit" data-unit="บาท"><input id="mmin" type="number" min="0" step="1000" inputmode="numeric"></span></label><label>ถึง<span class="unit" data-unit="บาท"><input id="mmax" type="number" min="0" step="1000" inputmode="numeric"></span></label></div>
           <details class="sub"><summary>กำหนดยอดบางเดือนเอง</summary>
             <span class="lbl sm">เว้นว่าง = สุ่มในช่วงด้านบน</span>
             <div class="months" id="months"></div>
           </details>
         </div>
         <div class="field" id="box-day" hidden><span class="lbl">รายรับต่อวันที่ร้านเปิด (บาท) · แต่ละวันสุ่มในช่วงนี้ ยอดเดือนคือผลรวมของวัน</span>
-          <div class="range"><label>ตั้งแต่<input id="dmin" type="number" min="0" step="100" inputmode="numeric"></label><label>ถึง<input id="dmax" type="number" min="0" step="100" inputmode="numeric"></label></div>
+          <div class="range"><label>ตั้งแต่<span class="unit" data-unit="บาท"><input id="dmin" type="number" min="0" step="100" inputmode="numeric"></span></label><label>ถึง<span class="unit" data-unit="บาท"><input id="dmax" type="number" min="0" step="100" inputmode="numeric"></span></label></div>
           <span class="lbl sm" id="day-est"></span>
         </div>
         <div class="plan" id="rev-list" aria-label="หมวดรายรับ"></div>
@@ -99,8 +99,10 @@
         <h2>รายจ่าย</h2>
         <div class="plan" id="exp-list" aria-label="หมวดรายจ่าย"></div>
         <button class="btn small" id="btn-exp-add" type="button">เพิ่มหมวดรายจ่าย</button>
+        <div class="field"><span class="lbl">รายจ่ายรวม</span>
+          <div class="range total"><label>รายจ่าย (% ของรายรับ)<span class="unit" data-unit="%"><input id="exp-total" type="number" min="5" max="100" step="1" inputmode="decimal"></span></label><label>คงเหลือทั้งช่วง (บาท)<span class="unit" data-unit="บาท"><input id="remain" type="number" min="0" step="100" inputmode="numeric"></span></label></div>
+        </div>
         <p class="sumline" id="exp-sum"></p>
-        <label class="field">กำไรเป้าหมาย (% ของรายรับ) · เว้นว่าง = ใช้สัดส่วนตามหมวดด้านบน<input id="margin" type="number" min="0" max="95" step="1" inputmode="decimal" placeholder="เช่น 25"></label>
       </section>
 
       <section class="sec">
@@ -113,14 +115,14 @@
       </section>
 
       <details class="sec adv">
-        <summary>จังหวะการขายและความละเอียด</summary>
+        <summary>เดือนที่ขายดี/ซบเซา</summary>
         <div class="grid">
-          <label class="field span2">เสาร์–อาทิตย์ขายดีกว่าวันธรรมดา (%) · ศุกร์ได้ครึ่งหนึ่ง · ใช้เมื่อตั้งรายรับต่อเดือน<input id="weekendPct" type="number" min="0" max="100" step="5" inputmode="numeric"></label>
+          <label class="field span2">เสาร์–อาทิตย์ขายดีกว่าวันธรรมดา (%) · ศุกร์ได้ครึ่งหนึ่ง · ใช้เมื่อตั้งรายรับต่อเดือน<span class="unit" data-unit="%"><input id="weekendPct" type="number" min="0" max="100" step="5" inputmode="numeric"></span></label>
           <div class="field span2"><span class="lbl">เดือนขายดี / ซบเซา · กดเดือนเพื่อสลับ ปกติ → ขายดี ▲ → ซบเซา ▼</span><div class="chips" id="season"></div></div>
-          <label class="field span2">เดือนขายดี/ซบเซา ต่างจากปกติกี่ % (รวมกับช่วงรายรับที่ตั้งไว้)<input id="seasonPct" type="number" min="0" max="60" step="5" inputmode="numeric"></label>
+          <label class="field span2">เดือนขายดี/ซบเซา ต่างจากปกติกี่ % (รวมกับช่วงรายรับที่ตั้งไว้)<span class="unit" data-unit="%"><input id="seasonPct" type="number" min="0" max="60" step="5" inputmode="numeric"></span></label>
           <div class="field span2"><span class="lbl">จำนวนรายการรายรับต่อวัน</span>
             <div class="range"><label>อย่างน้อย<input id="txMin" type="number" min="1" max="6" step="1" inputmode="numeric"></label><label>มากสุด<input id="txMax" type="number" min="1" max="6" step="1" inputmode="numeric"></label></div></div>
-          <label class="field">ยอดแต่ละวันแกว่ง ± (%)<input id="jitterPct" type="number" min="0" max="60" step="5" inputmode="numeric"></label>
+          <label class="field">ยอดแต่ละวันแกว่ง ± (%)<span class="unit" data-unit="%"><input id="jitterPct" type="number" min="0" max="60" step="5" inputmode="numeric"></span></label>
           <label class="field">ล็อกผลสุ่ม (ใส่คำหรือเลข)<input id="seed" type="text" maxlength="20" placeholder="เว้นว่าง = สุ่มทุกครั้ง"></label>
         </div>
       </details>

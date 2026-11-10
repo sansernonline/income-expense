@@ -184,25 +184,32 @@ test('FR_SET_060 · BR_020 · TC-SET-041/042/044: ยอดยกมาตั้
   await K.closeAll(page);
 });
 
-test('FR_SET_100 · TC-SET-045/046/047/048/050: กำไรเป้าหมายเว้นว่างรายจ่าย 63,000 · 30 → ปรับตามกำไร · บรรทัดสรุป · 96 → 95 · −1 → 0 · ขาดทุนไม่แสดงกำไรติดลบ', o, async () => {
-  const page = await open({ state: { settings: { type: 'other', monthMin: 100000, monthMax: 100000 }, plan: { revenue: [{ name: 'ขายหน้าร้าน', weight: 1 }], expenses: [{ name: 'ค่าของ', pct: 45, freq: 'weekly' }, { name: 'ค่าแรง', pct: 45, freq: 'monthly', day: 28 }] } } });
-  assert.match(await page.locator('#exp-sum').innerText(), /90%.*10%/);
+test('FR_SET_100 · TC-SET-045/046/047/048/050: ช่องรายจ่ายรวม (%) / คงเหลือทั้งช่วง (บาท) เติมจากหมวด · กรอกคงเหลือ 30,000 → หมวด 35/35 · กรอกรายจ่าย 80 → 40/40 · เกิน 95% → 95,000 · −1 → 0 · 2 เดือน = 200,000 · ขาดทุนไม่แสดงติดลบ', o, async () => {
+  const page = await open({ state: { settings: { type: 'other', start: '2026-03-01', end: '2026-03-31', monthMin: 100000, monthMax: 100000 }, plan: { revenue: [{ name: 'ขายหน้าร้าน', weight: 1 }], expenses: [{ name: 'ค่าของ', pct: 45, freq: 'weekly' }, { name: 'ค่าแรง', pct: 45, freq: 'monthly', day: 28 }] } } });
+  const pcts = () => page.$$eval('#exp-list [data-f=pct]', (els) => els.map((e) => e.value));
+  const boxes = async () => [await val(page, '#exp-total'), await val(page, '#remain')];
+  assert.deepEqual(await boxes(), ['90', '10000']);
   assert.equal(sumOf(await gen(page), 'expense'), 90000);
-  await fillNum(page, '#margin', 30);
-  assert.match(await page.locator('#exp-sum').innerText(), /70%/);
-  assert.match(await page.locator('#exp-sum').innerText(), /30%/);
+  await fillNum(page, '#remain', 30000);
+  assert.deepEqual(await boxes(), ['70', '30000']);
+  assert.deepEqual(await pcts(), ['35', '35']);
   const rows = await gen(page);
   assert.equal(sumOf(rows, 'expense', (r) => r.name === 'ค่าของ'), 35000);
   assert.equal(sumOf(rows, 'expense', (r) => r.name === 'ค่าแรง'), 35000);
-  await fillNum(page, '#margin', 96);
-  assert.equal(await val(page, '#margin'), '95');
-  await fillNum(page, '#margin', -1);
-  assert.equal(await val(page, '#margin'), '0');
-  await fillNum(page, '#margin', '');
-  assert.equal(await val(page, '#margin'), '');
+  assert.equal(sumOf(rows, 'income') - sumOf(rows, 'expense'), 30000, 'คงเหลือในตาราง = ยอดที่กรอก');
+  await fillNum(page, '#exp-total', 80);
+  assert.deepEqual(await boxes(), ['80', '20000']);
+  assert.deepEqual(await pcts(), ['40', '40']);
+  await page.locator('#end').fill('2026-04-30'); await page.locator('#end').dispatchEvent('change');
+  assert.deepEqual(await boxes(), ['80', '40000'], 'ช่วง 2 เดือน รายรับคาด 200,000');
+  await fillNum(page, '#remain', 999999);
+  assert.deepEqual(await boxes(), ['5', '190000']);
+  await fillNum(page, '#remain', -1);
+  assert.deepEqual(await boxes(), ['100', '0']);
   await fillNum(page, '#exp-list .prow:not(.head):nth-of-type(2) [data-f=pct]', 60);
   await fillNum(page, '#exp-list .prow:not(.head):nth-of-type(3) [data-f=pct]', 50);
-  assert.match(await page.locator('#exp-sum').innerText(), /110%.*ขาดทุน/);
+  assert.deepEqual(await boxes(), ['110', '0']);
+  assert.match(await page.locator('#exp-sum').innerText(), /ขาดทุน/);
   assert.ok(!/-\d/.test(await page.locator('#exp-sum').innerText()));
   await K.closeAll(page);
 });
@@ -211,7 +218,7 @@ test('FR_SET_110/120/130/140/150 · D-02 · TC-SET-072/073: ค่าตั้�
   const page = await open();
   for (const sel of ['details.adv', 'details.sub:has(#months)', 'details.sub:has(#closed-dates)']) assert.equal(await page.locator(sel).evaluate((e) => e.open), false, sel);
   await openAdv(page);
-  assert.deepEqual(await Promise.all(['#weekendPct', '#seasonPct', '#txMin', '#txMax', '#jitterPct', '#seed', '#margin'].map((s) => val(page, s))), ['30', '25', '1', '2', '25', '', '']);
+  assert.deepEqual(await Promise.all(['#weekendPct', '#seasonPct', '#txMin', '#txMax', '#jitterPct', '#seed'].map((s) => val(page, s))), ['30', '25', '1', '2', '25', '']);
   assert.equal(await page.locator('#season .chip').count(), 12);
   assert.equal((await page.$$eval('#season .chip', (els) => els.map((e) => e.textContent).join(''))).includes('▲'), false);
   await page.locator('details.sub:has(#months) summary').click();

@@ -61,6 +61,15 @@ button[disabled]{opacity:.45;cursor:default}
 input[type=text],input[type=password],input[type=date],input[type=number],select{height:36px;padding:0 var(--s3);border:1px solid var(--line-2);border-radius:var(--r-ctl);background:var(--surface);color:var(--text);min-width:0;width:100%}
 .range{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3)}
 .range label{display:flex;flex-direction:column;gap:2px;font-size:var(--fs-xs)}
+.range.total{grid-template-columns:7.5rem 1fr}
+/* หน่วยต่อท้ายในช่อง (% · บาท) — ซ่อนลูกศรเลขไม่ให้ทับหน่วย */
+.unit{position:relative;display:block}
+.unit::after{content:attr(data-unit);position:absolute;right:var(--s3);top:50%;transform:translateY(-50%);color:var(--text-2);font-size:var(--fs-sm);pointer-events:none}
+.unit input{padding-right:3.8em;text-align:right;-moz-appearance:textfield;appearance:textfield}
+.unit[data-unit="%"] input{padding-right:2.4em}
+.prow .unit::after{right:var(--s2)}
+.prow .unit[data-unit="%"] input{padding-right:1.9em}
+.unit input::-webkit-inner-spin-button,.unit input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .lbl.sm{font-size:var(--fs-xs);color:var(--text-3)}
 .months{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:var(--s2)}
 .months label{display:flex;flex-direction:column;gap:2px;font-size:var(--fs-xs)}
